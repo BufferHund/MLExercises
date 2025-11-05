@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 
-const router = Router();
+const router: Router = Router();
 const prisma = new PrismaClient();
 
 // GET /leaderboard - 获取排行榜

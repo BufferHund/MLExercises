@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { generateToken } from '../utils/jwt.js';
 import { nanoid } from 'nanoid';
 
-const router = Router();
+const router: Router = Router();
 const prisma = new PrismaClient();
 
 const anonLoginSchema = z.object({

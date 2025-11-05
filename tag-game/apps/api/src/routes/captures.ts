@@ -8,7 +8,7 @@ import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { calculateDistance } from '../utils/geo.js';
 import { scoreCapture } from '../utils/game.js';
 
-const router = Router();
+const router: Router = Router();
 const prisma = new PrismaClient();
 
 // 配置上传

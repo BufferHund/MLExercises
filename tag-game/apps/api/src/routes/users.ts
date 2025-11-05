@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import QRCode from 'qrcode';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 
-const router = Router();
+const router: Router = Router();
 const prisma = new PrismaClient();
 
 // GET /me - 获取当前用户信息

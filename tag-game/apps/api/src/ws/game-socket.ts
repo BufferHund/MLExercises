@@ -97,7 +97,7 @@ export function setupGameSocket(io: Server) {
           positionCache.set(key, {
             userId,
             gameId,
-            role: user.role,
+            role: user.role as 'HUNTER' | 'RUNNER',
             lat: data.lat,
             lng: data.lng,
             timestamp: now,
@@ -134,7 +134,7 @@ export function setupGameSocket(io: Server) {
           stealthPickups.forEach((p) => stealthedUsers.add(p.userId));
 
           const nearby = nearbyEnemies(
-            { lat: data.lat, lng: data.lng, role: user.role },
+            { lat: data.lat, lng: data.lng, role: user.role as 'HUNTER' | 'RUNNER' },
             allPositions.map((pos) => ({
               userId: pos.userId,
               role: pos.role,

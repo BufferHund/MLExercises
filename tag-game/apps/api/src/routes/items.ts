@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 
-const router = Router();
+const router: Router = Router();
 const prisma = new PrismaClient();
 
 // GET /items/q/:code - 查询道具

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { assignTeams } from '../utils/game.js';
 
-const router = Router();
+const router: Router = Router();
 const prisma = new PrismaClient();
 
 const createGameSchema = z.object({
