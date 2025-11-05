@@ -155,6 +155,33 @@ command: sh -c "npx prisma migrate deploy && node dist/index.js"
 command: sh -c "npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && node apps/api/dist/index.js"
 ```
 
+### 10. 缺少 OpenSSL 库（Alpine Linux + Prisma）
+
+**问题**: Prisma 引擎无法加载，提示找不到 OpenSSL 共享库。
+
+**错误信息**:
+```
+Error loading shared library libssl.so.1.1: No such file or directory
+(needed by /app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/.prisma/client/libquery_engine-linux-musl-arm64-openssl-1.1.x.so.node)
+```
+
+**原因**: Alpine Linux 默认不包含 OpenSSL 1.1.x 库，而 Prisma 的查询引擎需要这些库才能运行。
+
+**修复**:
+- 在 Dockerfile 的 production runner 阶段安装 `openssl` 包
+
+**Dockerfile 变更**:
+```dockerfile
+# Production image
+FROM base AS runner
+WORKDIR /app
+
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
+ENV NODE_ENV=production
+```
+
 ## 现在可以运行了！
 
 所有修复已提交并推送到分支 `claude/offline-tag-game-011CUqK7oabPWpLso6rbQrY9`。
