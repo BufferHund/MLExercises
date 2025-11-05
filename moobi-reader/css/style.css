@@ -357,11 +357,17 @@ body::before {
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
     padding: 32px;
+    /* Smooth scrolling for Mac */
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
 }
 
 .viewer {
     width: 100%;
     height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #epubArea {
@@ -369,11 +375,22 @@ body::before {
     height: 100%;
 }
 
+#pdfViewer {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 #pdfCanvas {
     display: block;
     margin: 0 auto;
     max-width: 100%;
+    height: auto;
     border-radius: var(--border-radius-sm);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    background: white;
+    /* Improve rendering on retina displays */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
 }
 
 /* Bottom Bar */

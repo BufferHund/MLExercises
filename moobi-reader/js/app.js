@@ -130,17 +130,36 @@ class MoobiReader {
     // EPUB Functions
     async loadEpub(file) {
         try {
+            // Show reader screen first
+            this.showReaderScreen();
+
+            // Read file as ArrayBuffer
             const arrayBuffer = await file.arrayBuffer();
 
-            // Initialize ePub book
-            this.epubBook = ePub(arrayBuffer);
+            // Check if ePub is available
+            if (typeof ePub === 'undefined') {
+                throw new Error('ePub library not loaded');
+            }
 
-            // Create rendition
+            // Initialize ePub book with options
+            this.epubBook = ePub(arrayBuffer, {
+                openAs: 'epub'
+            });
+
+            // Wait for book to be opened
+            await this.epubBook.ready;
+
+            // Create rendition with fixed dimensions
+            const viewerWidth = this.epubArea.clientWidth || 800;
+            const viewerHeight = this.epubArea.clientHeight || 600;
+
             this.rendition = this.epubBook.renderTo(this.epubArea, {
-                width: '100%',
-                height: '100%',
+                width: viewerWidth,
+                height: viewerHeight,
                 spread: 'none',
-                flow: 'paginated'
+                flow: 'paginated',
+                manager: 'default',
+                allowScriptedContent: true
             });
 
             // Display the book
@@ -148,29 +167,46 @@ class MoobiReader {
 
             // Load metadata
             const metadata = await this.epubBook.loaded.metadata;
-            this.bookTitle.textContent = metadata.title || '未知标题';
+            this.bookTitle.textContent = metadata.title || file.name;
             this.bookAuthor.textContent = metadata.creator || '未知作者';
 
-            // Get total pages (locations)
-            await this.epubBook.locations.generate(1024);
-            this.totalPages = this.epubBook.locations.total;
-            this.currentPage = 1;
-            this.updateProgress();
+            // Generate locations for progress tracking
+            this.epubBook.locations.generate(1600).then(() => {
+                this.totalPages = this.epubBook.locations.total || 100;
+                this.currentPage = 1;
+                this.updateProgress();
+            }).catch(() => {
+                // If locations generation fails, use a default
+                this.totalPages = 100;
+                this.currentPage = 1;
+                this.updateProgress();
+            });
 
             // Navigation events
             this.rendition.on('relocated', (location) => {
-                this.currentPage = location.start.displayed.page;
-                this.updateProgress();
+                if (location.start) {
+                    const currentLocation = this.epubBook.locations.locationFromCfi(location.start.cfi);
+                    this.currentPage = currentLocation || 1;
+                    this.updateProgress();
+                }
             });
 
             // Apply theme styles to epub
             this.applyEpubStyles();
 
-            // Show reader screen
-            this.showReaderScreen();
+            // Handle resize
+            window.addEventListener('resize', () => {
+                if (this.rendition && this.currentFormat === 'epub') {
+                    const newWidth = this.epubArea.clientWidth;
+                    const newHeight = this.epubArea.clientHeight;
+                    this.rendition.resize(newWidth, newHeight);
+                }
+            });
+
         } catch (error) {
             console.error('Error loading EPUB:', error);
-            alert('加载 EPUB 文件时出错。请尝试其他文件。');
+            alert('加载 EPUB 文件时出错：' + error.message + '\n请确保这是一个有效的 EPUB 文件。');
+            this.goToWelcomeScreen();
         }
     }
 
@@ -218,6 +254,9 @@ class MoobiReader {
     // PDF Functions
     async loadPdf(file) {
         try {
+            // Show reader screen first
+            this.showReaderScreen();
+
             const arrayBuffer = await file.arrayBuffer();
 
             // Load PDF document
@@ -232,14 +271,28 @@ class MoobiReader {
             this.bookTitle.textContent = metadata.info.Title || file.name;
             this.bookAuthor.textContent = metadata.info.Author || '未知作者';
 
-            // Render first page
-            await this.renderPdfPage(1);
-
             this.updateProgress();
-            this.showReaderScreen();
+
+            // Render first page after a short delay to ensure container is ready
+            setTimeout(() => {
+                this.renderPdfPage(1);
+            }, 100);
+
+            // Handle window resize
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                if (this.currentFormat === 'pdf' && this.pdfDoc) {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        this.renderPdfPage(this.currentPage);
+                    }, 300);
+                }
+            });
+
         } catch (error) {
             console.error('Error loading PDF:', error);
             alert('加载 PDF 文件时出错。请尝试其他文件。');
+            this.goToWelcomeScreen();
         }
     }
 
@@ -248,16 +301,42 @@ class MoobiReader {
 
         try {
             const page = await this.pdfDoc.getPage(pageNum);
-            const viewport = page.getViewport({ scale: 1.5 });
+
+            // Get container dimensions
+            const container = this.pdfViewer;
+            const containerWidth = container.clientWidth - 40; // Account for padding
+            const containerHeight = container.clientHeight - 40;
+
+            // Calculate optimal scale to fit the container
+            const viewport = page.getViewport({ scale: 1.0 });
+            const scaleX = containerWidth / viewport.width;
+            const scaleY = containerHeight / viewport.height;
+            const scale = Math.min(scaleX, scaleY, 2.5); // Cap at 2.5x for quality
+
+            // Get scaled viewport
+            const scaledViewport = page.getViewport({ scale: scale });
+
+            // Use device pixel ratio for retina displays (Mac)
+            const outputScale = window.devicePixelRatio || 1;
 
             // Set canvas dimensions
-            this.pdfCanvas.width = viewport.width;
-            this.pdfCanvas.height = viewport.height;
+            this.pdfCanvas.width = Math.floor(scaledViewport.width * outputScale);
+            this.pdfCanvas.height = Math.floor(scaledViewport.height * outputScale);
 
-            // Render PDF page
+            // Set display size (CSS pixels)
+            this.pdfCanvas.style.width = Math.floor(scaledViewport.width) + 'px';
+            this.pdfCanvas.style.height = Math.floor(scaledViewport.height) + 'px';
+
+            // Scale context to match device pixel ratio
+            const transform = outputScale !== 1
+                ? [outputScale, 0, 0, outputScale, 0, 0]
+                : null;
+
+            // Render PDF page with high quality
             const renderContext = {
                 canvasContext: this.pdfContext,
-                viewport: viewport
+                viewport: scaledViewport,
+                transform: transform
             };
 
             await page.render(renderContext).promise;
