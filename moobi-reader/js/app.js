@@ -5,6 +5,7 @@ class MoobiReader {
         this.currentFormat = null;
         this.currentPage = 0;
         this.totalPages = 0;
+        this.currentBlobUrl = null; // For EPUB blob URL cleanup
         this.settings = {
             fontSize: 16,
             lineHeight: 1.6,
@@ -133,18 +134,20 @@ class MoobiReader {
             // Show reader screen first
             this.showReaderScreen();
 
-            // Read file as ArrayBuffer
-            const arrayBuffer = await file.arrayBuffer();
-
             // Check if ePub is available
             if (typeof ePub === 'undefined') {
                 throw new Error('ePub library not loaded');
             }
 
-            // Initialize ePub book with options
-            this.epubBook = ePub(arrayBuffer, {
-                openAs: 'epub'
-            });
+            // Create a Blob URL to avoid CORS issues
+            const blob = new Blob([file], { type: 'application/epub+zip' });
+            const blobUrl = URL.createObjectURL(blob);
+
+            // Store the blob URL for cleanup
+            this.currentBlobUrl = blobUrl;
+
+            // Initialize ePub book with Blob URL
+            this.epubBook = ePub(blobUrl);
 
             // Wait for book to be opened
             await this.epubBook.ready;
@@ -463,6 +466,13 @@ class MoobiReader {
                 this.epubBook.destroy();
                 this.epubBook = null;
             }
+
+            // Release Blob URL to free memory
+            if (this.currentBlobUrl) {
+                URL.revokeObjectURL(this.currentBlobUrl);
+                this.currentBlobUrl = null;
+            }
+
             this.pdfDoc = null;
 
             // Reset file input

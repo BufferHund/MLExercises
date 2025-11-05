@@ -26,7 +26,12 @@
 
 ## 🚀 快速开始
 
-### 在线使用
+### ⚠️ 重要提示
+
+**必须使用本地 HTTP 服务器运行，不能直接双击打开 index.html！**
+由于浏览器的 CORS 安全策略，EPUB 文件需要通过 HTTP 服务器加载。
+
+### 方法一：使用启动脚本（推荐）
 
 1. **下载项目**
    ```bash
@@ -34,21 +39,43 @@
    cd moobi-reader
    ```
 
-2. **打开应用**
-   - 使用任何现代浏览器打开 `index.html`
-   - 或使用本地服务器:
-     ```bash
-     # 使用 Python
-     python -m http.server 8000
+2. **运行启动脚本**
 
-     # 使用 Node.js (需要安装 http-server)
-     npx http-server -p 8000
-     ```
+   **Mac/Linux:**
+   ```bash
+   ./start-server.sh
+   ```
 
-3. **开始阅读**
+   **Windows:**
+   ```bash
+   start-server.bat
+   ```
+
+3. **打开浏览器**
+   - 在浏览器中访问：`http://localhost:8000`
    - 点击"选择文件"按钮
    - 选择 EPUB 或 PDF 文件
    - 享受阅读！
+
+### 方法二：手动启动服务器
+
+使用以下任一命令启动本地服务器：
+
+```bash
+# 使用 Python 3 (推荐)
+python3 -m http.server 8000
+
+# 使用 Python 2
+python -m SimpleHTTPServer 8000
+
+# 使用 Node.js
+npx http-server -p 8000
+
+# 使用 PHP
+php -S localhost:8000
+```
+
+然后在浏览器中打开 `http://localhost:8000`
 
 ## 🎮 使用说明
 
