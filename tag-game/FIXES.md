@@ -117,7 +117,16 @@ Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /app/d
 - 在 runner 阶段保持 monorepo 的目录结构
 - 复制到 `/app/apps/api/dist` 而不是 `/app/dist`
 - 更新 CMD：从 `node dist/index.js` 改为 `node apps/api/dist/index.js`
+- **重要**：还需要复制 `/app/apps/api/node_modules` 目录，因为 pnpm 在这个目录创建了指向根 node_modules 的符号链接
 - 这样 Node.js 可以从 `/app/node_modules` 正确找到所有依赖
+
+**Dockerfile 变更**:
+```dockerfile
+# 必须同时复制根 node_modules 和子项目的 node_modules
+COPY --from=builder --chown=apiuser:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=apiuser:nodejs /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=builder --chown=apiuser:nodejs /app/apps/api/dist ./apps/api/dist
+```
 
 ### 9. Prisma Schema 路径错误（docker-compose.yml）
 
