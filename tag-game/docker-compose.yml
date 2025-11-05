@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=file:./data/prod.db
+      - JWT_SECRET=${JWT_SECRET:-change-this-secret}
+      - UPLOAD_DIR=/app/uploads
+      - MAX_UPLOAD_MB=4
+      - WS_HEARTBEAT=20000
+      - MAX_CAPTURE_DISTANCE_METERS=5
+      - POSITION_UPDATE_COOLDOWN_SEC=3
+      - NEARBY_RADIUS_METERS=15
+    volumes:
+      - api_data:/app/data
+      - api_uploads:/app/uploads
+    command: sh -c "npx prisma migrate deploy && node dist/index.js"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    ports:
+      - '80:80'
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  api_data:
+  api_uploads:

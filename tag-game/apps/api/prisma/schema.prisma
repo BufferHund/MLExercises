@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  HUNTER
+  RUNNER
+}
+
+enum GameStatus {
+  LOBBY
+  RUNNING
+  ENDED
+}
+
+enum ItemType {
+  STEALTH   // 隐身
+  BOOST     // 加速/免疫
+  RADAR     // 雷达（抓捕加分）
+  REFLECT   // 反射
+}
+
+model User {
+  id            String    @id @default(uuid())
+  nickname      String
+  role          Role?
+  avatarUrl     String?
+  badgeCode     String    @unique @default(uuid())
+  isEliminated  Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+
+  participations Participation[]
+  pickups        Pickup[]
+  capturesAsHunter Capture[] @relation("HunterCaptures")
+  capturesAsRunner Capture[] @relation("RunnerCaptures")
+  positionLogs   PositionLog[]
+}
+
+model Game {
+  id          String      @id @default(uuid())
+  name        String
+  areaBounds  String?     // JSON: {north, south, east, west}
+  status      GameStatus  @default(LOBBY)
+  startAt     DateTime?
+  endAt       DateTime?
+  createdAt   DateTime    @default(now())
+
+  participations Participation[]
+  pickups        Pickup[]
+  captures       Capture[]
+  positionLogs   PositionLog[]
+}
+
+model Participation {
+  id        String   @id @default(uuid())
+  userId    String
+  gameId    String
+  score     Int      @default(0)
+  team      Role
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@index([gameId])
+}
+
+model Item {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  type        ItemType
+  durationSec Int      // 持续时间（秒）
+  createdAt   DateTime @default(now())
+
+  pickups Pickup[]
+}
+
+model Pickup {
+  id        String   @id @default(uuid())
+  userId    String
+  itemId    String
+  gameId    String
+  used      Boolean  @default(false)
+  expiresAt DateTime? // 使用后的过期时间
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId, gameId])
+  @@index([userId, gameId])
+}
+
+model Capture {
+  id        String   @id @default(uuid())
+  hunterId  String
+  runnerId  String
+  gameId    String
+  photoUrl  String
+  lat       Float
+  lng       Float
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  hunter User @relation("HunterCaptures", fields: [hunterId], references: [id], onDelete: Cascade)
+  runner User @relation("RunnerCaptures", fields: [runnerId], references: [id], onDelete: Cascade)
+  game   Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId])
+  @@index([hunterId])
+  @@index([runnerId])
+}
+
+model PositionLog {
+  id        String   @id @default(uuid())
+  userId    String
+  gameId    String
+  lat       Float
+  lng       Float
+  accuracy  Float?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([userId, gameId])
+  @@index([gameId, createdAt])
+}
