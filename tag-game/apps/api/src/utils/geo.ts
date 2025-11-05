@@ -71,3 +71,21 @@ export function nearbyEnemies(
     return distance <= radiusMeters;
   });
 }
+
+/**
+ * 获取所有附近玩家（包括队友和敌人）
+ * 用于地图显示所有玩家位置
+ */
+export function nearbyPlayers(
+  myPos: { lat: number; lng: number; role: 'HUNTER' | 'RUNNER' },
+  others: Position[],
+  radiusMeters: number = 1000 // 默认1公里范围，可以看到所有玩家
+): Position[] {
+  return others.filter((other) => {
+    // 如果敌人隐身，跳过
+    if (other.role !== myPos.role && other.isStealthed) return false;
+    // 计算距离
+    const distance = calculateDistance(myPos.lat, myPos.lng, other.lat, other.lng);
+    return distance <= radiusMeters;
+  });
+}

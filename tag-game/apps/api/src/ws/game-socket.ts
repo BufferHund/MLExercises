@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { PrismaClient } from '@prisma/client';
 import { verifyToken } from '../utils/jwt.js';
-import { nearbyEnemies } from '../utils/geo.js';
+import { nearbyEnemies, nearbyPlayers } from '../utils/geo.js';
 
 const prisma = new PrismaClient();
 
@@ -116,7 +116,7 @@ export function setupGameSocket(io: Server) {
             })
             .catch((err) => console.error('Position log error:', err));
 
-          // 计算附近玩家
+          // 获取所有玩家位置
           const allPositions = Array.from(positionCache.values()).filter(
             (pos) => pos.gameId === gameId && pos.userId !== userId
           );
@@ -133,7 +133,8 @@ export function setupGameSocket(io: Server) {
           });
           stealthPickups.forEach((p) => stealthedUsers.add(p.userId));
 
-          const nearby = nearbyEnemies(
+          // 获取所有可见玩家（包括队友）
+          const allPlayers = nearbyPlayers(
             { lat: data.lat, lng: data.lng, role: user.role as 'HUNTER' | 'RUNNER' },
             allPositions.map((pos) => ({
               userId: pos.userId,
@@ -143,11 +144,20 @@ export function setupGameSocket(io: Server) {
               lastSeenSec: Math.floor((now - pos.timestamp) / 1000),
               isStealthed: stealthedUsers.has(pos.userId),
             })),
-            parseInt(process.env.NEARBY_RADIUS_METERS || '15')
+            5000 // 5公里范围内的所有玩家
           );
 
-          // 发送附近玩家（模糊位置）
-          socket.emit('pos:nearby', { users: nearby });
+          // 向房间内所有玩家广播这个玩家的位置更新
+          io.to(`game:${gameId}`).emit('pos:player-update', {
+            userId,
+            role: user.role,
+            lat: data.lat,
+            lng: data.lng,
+            timestamp: now,
+          });
+
+          // 发送当前玩家可见的所有玩家列表
+          socket.emit('pos:all-players', { users: allPlayers });
         } catch (error) {
           console.error('Position update error:', error);
           socket.emit('error', { message: 'Position update failed' });
