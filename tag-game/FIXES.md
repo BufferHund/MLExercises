@@ -209,6 +209,36 @@ if (require.main === module) {
 main();
 ```
 
+### 12. Prisma 引擎 OpenSSL 版本不匹配
+
+**问题**: Prisma Client 在运行时找不到匹配的 Query Engine，因为构建时和运行时的 OpenSSL 版本不一致。
+
+**错误信息**:
+```
+Prisma Client could not locate the Query Engine for runtime "linux-musl-arm64-openssl-3.0.x".
+
+This happened because Prisma Client was generated for "linux-musl-arm64-openssl-1.1.x", but the actual deployment required "linux-musl-arm64-openssl-3.0.x".
+```
+
+**原因**:
+- Alpine Linux 现在使用 OpenSSL 3.0.x
+- Prisma Client 默认只生成针对当前构建环境的二进制文件
+- 构建环境和运行环境的 OpenSSL 版本不同
+
+**修复**:
+- 在 Prisma schema 的 `generator` 配置中添加 `binaryTargets`
+- 指定生成 `linux-musl-arm64-openssl-3.0.x` 版本的二进制文件
+
+**schema.prisma 变更**:
+```prisma
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+```
+
+这样 Prisma 会在生成 client 时同时构建本地版本和目标部署环境版本的二进制文件。
+
 ## 启动自检功能
 
 为了确保服务在所有依赖就绪后才启动，我们添加了完整的启动自检流程：
