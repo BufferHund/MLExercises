@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { PrismaClient, ItemType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import multer from 'multer';
 import path from 'path';
@@ -126,7 +126,7 @@ router.post(
           userId: req.user!.userId,
           gameId: data.gameId,
           used: true,
-          item: { type: ItemType.RADAR },
+          item: { type: "RADAR" },
           expiresAt: { gt: new Date() },
         },
       });

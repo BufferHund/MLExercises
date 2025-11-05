@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import { PrismaClient, ItemType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { verifyToken } from '../utils/jwt.js';
 import { nearbyEnemies } from '../utils/geo.js';
 
@@ -128,7 +128,7 @@ export function setupGameSocket(io: Server) {
               gameId,
               used: true,
               expiresAt: { gt: new Date() },
-              item: { type: ItemType.STEALTH },
+              item: { type: "STEALTH" },
             },
           });
           stealthPickups.forEach((p) => stealthedUsers.add(p.userId));

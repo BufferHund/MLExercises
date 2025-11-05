@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { PrismaClient, GameStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { assignTeams } from '../utils/game.js';
@@ -26,7 +26,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
       data: {
         name: data.name,
         areaBounds: data.areaBounds ? JSON.stringify(data.areaBounds) : null,
-        status: GameStatus.LOBBY,
+        status: "LOBBY",
       },
     });
 
@@ -78,7 +78,7 @@ router.post('/:id/join', authMiddleware, async (req: AuthRequest, res) => {
       return res.status(404).json({ error: 'Game not found' });
     }
 
-    if (game.status !== GameStatus.LOBBY) {
+    if (game.status !== "LOBBY") {
       return res.status(400).json({ error: 'Game already started' });
     }
 
@@ -124,7 +124,7 @@ router.post('/:id/assign-teams', authMiddleware, async (req: AuthRequest, res) =
       return res.status(404).json({ error: 'Game not found' });
     }
 
-    if (game.status !== GameStatus.LOBBY) {
+    if (game.status !== "LOBBY") {
       return res.status(400).json({ error: 'Teams already assigned' });
     }
 
@@ -171,7 +171,7 @@ router.post('/:id/start', authMiddleware, async (req: AuthRequest, res) => {
     const game = await prisma.game.update({
       where: { id: req.params.id },
       data: {
-        status: GameStatus.RUNNING,
+        status: "RUNNING",
         startAt: new Date(),
       },
     });
@@ -189,7 +189,7 @@ router.post('/:id/end', authMiddleware, async (req: AuthRequest, res) => {
     const game = await prisma.game.update({
       where: { id: req.params.id },
       data: {
-        status: GameStatus.ENDED,
+        status: "ENDED",
         endAt: new Date(),
       },
     });

@@ -1,18 +1,18 @@
-import { User, Participation, Role } from '@prisma/client';
+import { User, Participation } from '@prisma/client';
 
 /**
  * 分配阵营：1/3 猎人，2/3 逃亡者
  */
 export function assignTeams(userIds: string[]): {
   userId: string;
-  team: Role;
+  team: string;
 }[] {
   const shuffled = [...userIds].sort(() => Math.random() - 0.5);
   const hunterCount = Math.max(1, Math.floor(shuffled.length / 3));
 
   return shuffled.map((userId, index) => ({
     userId,
-    team: index < hunterCount ? Role.HUNTER : Role.RUNNER,
+    team: index < hunterCount ? "HUNTER" : "RUNNER",
   }));
 }
 

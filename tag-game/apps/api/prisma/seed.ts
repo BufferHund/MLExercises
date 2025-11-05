@@ -1,4 +1,4 @@
-import { PrismaClient, ItemType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { nanoid } from 'nanoid';
 
 const prisma = new PrismaClient();
@@ -17,10 +17,10 @@ async function main() {
 
   // 创建道具
   const itemTypes = [
-    { type: ItemType.STEALTH, durationSec: 30, count: 10 },
-    { type: ItemType.BOOST, durationSec: 60, count: 8 },
-    { type: ItemType.RADAR, durationSec: 45, count: 6 },
-    { type: ItemType.REFLECT, durationSec: 20, count: 4 },
+    { type: 'STEALTH', durationSec: 30, count: 10 },
+    { type: 'BOOST', durationSec: 60, count: 8 },
+    { type: 'RADAR', durationSec: 45, count: 6 },
+    { type: 'REFLECT', durationSec: 20, count: 4 },
   ];
 
   const items = [];
