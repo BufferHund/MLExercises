@@ -206,6 +206,9 @@ class MoobiReader {
                 }
             });
 
+            // Notify enhanced features
+            this.notifyBookLoaded(file.name);
+
         } catch (error) {
             console.error('Error loading EPUB:', error);
             alert('加载 EPUB 文件时出错：' + error.message + '\n请确保这是一个有效的 EPUB 文件。');
@@ -291,6 +294,9 @@ class MoobiReader {
                     }, 300);
                 }
             });
+
+            // Notify enhanced features
+            this.notifyBookLoaded(file.name);
 
         } catch (error) {
             console.error('Error loading PDF:', error);
@@ -387,11 +393,30 @@ class MoobiReader {
 
         const percentage = this.totalPages > 0 ? (this.currentPage / this.totalPages) * 100 : 0;
         this.progressSlider.value = percentage;
+
+        // Update bookshelf progress
+        if (window.moobiFeatures && this.currentBook) {
+            const bookData = {
+                id: this.bookTitle.textContent,
+                title: this.bookTitle.textContent,
+                author: this.bookAuthor.textContent,
+                format: this.currentFormat,
+                progress: Math.round(percentage),
+                currentPage: this.currentPage,
+                totalPages: this.totalPages,
+                lastRead: new Date().toISOString()
+            };
+            window.moobiFeatures.addToBookshelf(bookData);
+        }
     }
 
     // Settings Functions
     toggleSettings() {
-        this.settingsPanel.classList.toggle('active');
+        if (window.moobiFeatures) {
+            window.moobiFeatures.togglePanel('settingsPanel');
+        } else {
+            this.settingsPanel.classList.toggle('active');
+        }
     }
 
     changeFontSize(size) {
@@ -477,7 +502,29 @@ class MoobiReader {
 
             // Reset file input
             this.fileInput.value = '';
+
+            // Notify enhanced features
+            if (window.moobiFeatures) {
+                window.moobiFeatures.onBookClosed();
+            }
         }, 100);
+    }
+
+    // Notify book loaded
+    notifyBookLoaded(fileName) {
+        if (window.moobiFeatures) {
+            const bookData = {
+                id: this.bookTitle.textContent,
+                title: this.bookTitle.textContent,
+                author: this.bookAuthor.textContent,
+                format: this.currentFormat,
+                progress: 0,
+                currentPage: this.currentPage,
+                totalPages: this.totalPages,
+                lastRead: new Date().toISOString()
+            };
+            window.moobiFeatures.onBookLoaded(bookData);
+        }
     }
 
     // Keyboard Shortcuts
