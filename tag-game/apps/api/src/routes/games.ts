@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { assignTeams } from '../utils/game.js';
+import { generateGameId } from '../utils/gameId.js';
 
 const router: Router = Router();
 const prisma = new PrismaClient();
@@ -21,10 +22,27 @@ const createGameSchema = z.object({
 router.post('/', authMiddleware, async (req: AuthRequest, res) => {
   try {
     const data = createGameSchema.parse(req.body);
+    const userId = req.user!.userId;
+
+    // 生成短游戏 ID，最多尝试 10 次避免冲突
+    let gameId = '';
+    let attempts = 0;
+    while (attempts < 10) {
+      gameId = generateGameId();
+      const existing = await prisma.game.findUnique({ where: { id: gameId } });
+      if (!existing) break;
+      attempts++;
+    }
+
+    if (!gameId) {
+      return res.status(500).json({ error: 'Failed to generate unique game ID' });
+    }
 
     const game = await prisma.game.create({
       data: {
+        id: gameId,
         name: data.name,
+        creatorId: userId,
         areaBounds: data.areaBounds ? JSON.stringify(data.areaBounds) : null,
         status: "LOBBY",
       },

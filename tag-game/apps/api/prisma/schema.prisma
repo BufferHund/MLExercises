@@ -23,6 +23,7 @@ model User {
   avatarUrl     String?
   badgeCode     String    @unique @default(uuid())
   isEliminated  Boolean   @default(false)
+  isAdmin       Boolean   @default(false)  // 管理员标识
   createdAt     DateTime  @default(now())
 
   participations Participation[]
@@ -30,21 +31,29 @@ model User {
   capturesAsHunter Capture[] @relation("HunterCaptures")
   capturesAsRunner Capture[] @relation("RunnerCaptures")
   positionLogs   PositionLog[]
+  createdGames   Game[]    @relation("GameCreator")
+  itemsCreated   Item[]    @relation("ItemCreator")
+  verifiedCaptures Capture[] @relation("CaptureVerifier")
 }
 
 model Game {
-  id          String      @id @default(uuid())
+  id          String      @id  // 短助记码，如 "HUNT123"
   name        String
+  creatorId   String          // 创建者（管理员）
   areaBounds  String?     // JSON: {north, south, east, west}
   status      String      @default("LOBBY")  // LOBBY | RUNNING | ENDED
   startAt     DateTime?
   endAt       DateTime?
   createdAt   DateTime    @default(now())
 
+  creator        User          @relation("GameCreator", fields: [creatorId], references: [id], onDelete: Cascade)
   participations Participation[]
   pickups        Pickup[]
   captures       Capture[]
   positionLogs   PositionLog[]
+  items          Item[]
+
+  @@index([creatorId])
 }
 
 model Participation {
@@ -66,10 +75,20 @@ model Item {
   id          String   @id @default(uuid())
   code        String   @unique
   type        String   // STEALTH | BOOST | RADAR | REFLECT
+  name        String   // 道具名称
+  description String?  // 道具描述
   durationSec Int      // 持续时间（秒）
+  gameId      String   // 所属游戏
+  creatorId   String   // 创建者
+  isUsed      Boolean  @default(false)  // 是否已被拾取使用
   createdAt   DateTime @default(now())
 
+  game    Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  creator User     @relation("ItemCreator", fields: [creatorId], references: [id], onDelete: Cascade)
   pickups Pickup[]
+
+  @@index([gameId])
+  @@index([creatorId])
 }
 
 model Pickup {
@@ -90,23 +109,28 @@ model Pickup {
 }
 
 model Capture {
-  id        String   @id @default(uuid())
-  hunterId  String
-  runnerId  String
-  gameId    String
-  photoUrl  String
-  lat       Float
-  lng       Float
-  verified  Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id                  String    @id @default(uuid())
+  hunterId            String
+  runnerId            String
+  gameId              String
+  photoUrl            String
+  lat                 Float
+  lng                 Float
+  verificationStatus  String    @default("PENDING")  // PENDING | APPROVED | REJECTED
+  verifiedBy          String?   // 审核者 ID
+  verificationNote    String?   // 审核备注
+  verifiedAt          DateTime? // 审核时间
+  createdAt           DateTime  @default(now())
 
-  hunter User @relation("HunterCaptures", fields: [hunterId], references: [id], onDelete: Cascade)
-  runner User @relation("RunnerCaptures", fields: [runnerId], references: [id], onDelete: Cascade)
-  game   Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  hunter   User  @relation("HunterCaptures", fields: [hunterId], references: [id], onDelete: Cascade)
+  runner   User  @relation("RunnerCaptures", fields: [runnerId], references: [id], onDelete: Cascade)
+  game     Game  @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  verifier User? @relation("CaptureVerifier", fields: [verifiedBy], references: [id], onDelete: SetNull)
 
   @@index([gameId])
   @@index([hunterId])
   @@index([runnerId])
+  @@index([verificationStatus])
 }
 
 model PositionLog {

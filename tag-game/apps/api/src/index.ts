@@ -13,6 +13,7 @@ import itemsRouter from './routes/items.js';
 import capturesRouter from './routes/captures.js';
 import leaderboardRouter from './routes/leaderboard.js';
 import usersRouter from './routes/users.js';
+import adminRouter from './routes/admin.js';
 
 // WebSocket
 import { setupGameSocket } from './ws/game-socket.js';
@@ -52,6 +53,7 @@ app.use('/items', itemsRouter);
 app.use('/captures', capturesRouter);
 app.use('/leaderboard', leaderboardRouter);
 app.use('/users', usersRouter);
+app.use('/admin', adminRouter);
 
 // Health check
 app.get('/health', (req, res) => {

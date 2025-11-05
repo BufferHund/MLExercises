@@ -9,17 +9,19 @@ const prisma = new PrismaClient();
 
 const anonLoginSchema = z.object({
   nickname: z.string().min(1).max(20),
+  isAdmin: z.boolean().optional(), // 可选的管理员标识
 });
 
 // POST /auth/anon - 匿名登录
 router.post('/anon', async (req, res) => {
   try {
-    const { nickname } = anonLoginSchema.parse(req.body);
+    const { nickname, isAdmin } = anonLoginSchema.parse(req.body);
 
     const user = await prisma.user.create({
       data: {
         nickname,
         badgeCode: nanoid(12),
+        isAdmin: isAdmin || false,
       },
     });
 
@@ -34,6 +36,7 @@ router.post('/anon', async (req, res) => {
         id: user.id,
         nickname: user.nickname,
         badgeCode: user.badgeCode,
+        isAdmin: user.isAdmin,
       },
     });
   } catch (error) {
