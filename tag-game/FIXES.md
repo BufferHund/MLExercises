@@ -31,6 +31,19 @@
 **修复**:
 - 更新 `apps/web/package.json` 中的 `@zxing/library` 从 `^0.20.0` 到 `^0.21.0`
 
+### 4. Docker Build Context 问题（Monorepo）
+
+**问题**: Docker build context 设置在子目录（`./apps/api` 和 `./apps/web`），但 `pnpm-lock.yaml` 和 `pnpm-workspace.yaml` 在项目根目录，导致 Dockerfile 无法访问这些文件。
+
+**修复**:
+- 将 `docker-compose.yml` 中的 build context 从子目录改为根目录 (`.`)
+- 更新 Dockerfile 路径为相对于根目录的路径（`apps/api/Dockerfile`）
+- 修改 Dockerfiles 以复制 workspace 文件：
+  - 复制 `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `.npmrc`
+  - 复制子项目的 `package.json`
+  - 调整所有 COPY 路径以适应新的 context
+- 移除 `docker-compose.yml` 中过时的 `version` 字段
+
 ## 现在可以运行了！
 
 所有修复已提交并推送到分支 `claude/offline-tag-game-011CUqK7oabPWpLso6rbQrY9`。
