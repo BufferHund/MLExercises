@@ -159,49 +159,97 @@ function App() {
 
       {/* Reader Screen */}
       {showReader && (
-        <div className="flex items-center justify-center min-h-screen p-6 animate-scale-in">
-          <div className="glass rounded-4xl p-14 max-w-5xl w-full shadow-glass-lg">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-3xl mb-8 animate-float shadow-glass">
-                <BookOpen className="w-10 h-10 text-white" strokeWidth={2.5} />
+        <div className="flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8 animate-scale-in">
+          <div className="glass rounded-4xl p-8 sm:p-12 lg:p-16 max-w-6xl w-full shadow-glass-lg">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-10 pb-8 border-b border-white/10">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-3xl shadow-glass">
+                  <BookOpen className="w-8 h-8 text-white" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-white mb-1">阅读器界面</h2>
+                  <p className="text-white/60 text-sm font-medium">Moobi Reader Preview</p>
+                </div>
               </div>
-              <h2 className="text-4xl font-bold mb-6 text-white">阅读器界面</h2>
-              <p className="text-white/70 text-lg mb-4">
-                这里将显示 EPUB 或 PDF 内容
-              </p>
-              <p className="text-white/50 text-base mb-10 max-w-2xl mx-auto leading-relaxed">
-                完整的阅读器组件需要集成 epub.js 和 pdfjs-dist
-                <br />
-                参考 REACT_ARCHITECTURE.md 文档了解实现细节
-              </p>
               <button
                 onClick={() => setShowReader(false)}
-                className="group px-10 py-4 bg-gradient-to-r from-primary to-secondary rounded-3xl text-white font-bold text-lg hover:shadow-glass-lg hover:scale-105 active:scale-95 transition-all duration-300 ease-smooth relative overflow-hidden"
+                className="group px-6 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-white font-semibold text-base transition-all duration-300 ease-smooth hover:scale-105 active:scale-95 border border-white/10 hover:border-white/20"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 animate-shimmer" />
-                <span className="relative z-10">返回主页</span>
+                返回主页
               </button>
             </div>
 
-            {/* Quick Settings Preview */}
-            <div className="mt-14 p-8 bg-white/5 rounded-3xl border border-white/10">
-              <h3 className="text-2xl font-bold mb-6 text-white">当前设置</h3>
-              <div className="grid grid-cols-3 gap-6">
+            {/* Content Area - Mock Reader */}
+            <div className="mb-10">
+              <div className="bg-white/5 rounded-3xl p-10 border border-white/10 min-h-[400px] flex flex-col items-center justify-center text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-accent-purple/20 to-accent-pink/20 rounded-3xl flex items-center justify-center mb-6 animate-pulse-soft">
+                  <BookOpen className="w-10 h-10 text-white/50" strokeWidth={2} />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">EPUB / PDF 阅读区域</h3>
+                <p className="text-white/60 text-base max-w-md leading-relaxed mb-6">
+                  这里将显示电子书内容。完整实现需要集成 epub.js 和 pdfjs-dist 库进行文档渲染。
+                </p>
+                <div className="inline-flex items-center gap-3 px-5 py-2.5 bg-white/5 rounded-xl border border-white/10">
+                  <div className="w-2 h-2 bg-accent-green rounded-full animate-pulse-soft" />
+                  <span className="text-white/70 text-sm font-medium">准备就绪</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Settings */}
+            <div className="bg-white/5 rounded-3xl p-8 border border-white/10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-secondary to-accent-purple rounded-2xl flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" strokeWidth={2.5} />
+                </div>
+                <h3 className="text-2xl font-bold text-white">阅读设置</h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {[
-                  { label: '字体大小', value: `${settings.fontSize}px`, color: 'from-primary to-primary-light' },
-                  { label: '行间距', value: settings.lineHeight, color: 'from-accent-green to-accent-teal' },
-                  { label: '主题', value: settings.theme, color: 'from-secondary to-accent-purple' },
+                  {
+                    label: '字体大小',
+                    value: `${settings.fontSize}px`,
+                    color: 'from-primary to-primary-light',
+                    icon: '📝'
+                  },
+                  {
+                    label: '行间距',
+                    value: settings.lineHeight,
+                    color: 'from-accent-green to-accent-teal',
+                    icon: '📏'
+                  },
+                  {
+                    label: '主题模式',
+                    value: settings.theme === 'dark' ? '深色' : '浅色',
+                    color: 'from-secondary to-accent-purple',
+                    icon: '🌙'
+                  },
                 ].map((setting, i) => (
                   <div
                     key={i}
-                    className="p-6 bg-white/5 rounded-2xl hover:bg-white/10 transition-all duration-300 hover:scale-105 cursor-pointer border border-white/10 hover:border-white/20"
+                    className="group p-6 bg-white/5 hover:bg-white/10 rounded-2xl transition-all duration-300 ease-smooth hover:scale-105 cursor-pointer border border-white/10 hover:border-white/20 animate-slide-up"
+                    style={{ animationDelay: `${i * 100}ms` }}
                   >
-                    <p className="text-white/60 text-sm mb-3 font-medium">{setting.label}</p>
-                    <div className={`inline-block px-4 py-2 bg-gradient-to-r ${setting.color} rounded-xl`}>
-                      <p className="font-bold text-lg text-white capitalize">{setting.value}</p>
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-2xl">{setting.icon}</span>
+                      <p className="text-white/70 text-sm font-semibold">{setting.label}</p>
+                    </div>
+                    <div className={`inline-flex items-center px-4 py-2.5 bg-gradient-to-r ${setting.color} rounded-xl shadow-soft`}>
+                      <p className="font-bold text-xl text-white">{setting.value}</p>
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Implementation Note */}
+              <div className="mt-6 p-5 bg-accent-orange/10 rounded-2xl border border-accent-orange/20">
+                <p className="text-white/70 text-sm leading-relaxed">
+                  💡 <span className="font-semibold text-white">实现提示：</span>参考
+                  <code className="mx-1.5 px-2 py-1 bg-white/10 rounded text-accent-orange font-mono text-xs">REACT_ARCHITECTURE.md</code>
+                  文档了解 epub.js 和 pdfjs-dist 的完整集成方案
+                </p>
               </div>
             </div>
           </div>
