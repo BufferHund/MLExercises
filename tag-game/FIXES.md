@@ -44,6 +44,28 @@
   - 调整所有 COPY 路径以适应新的 context
 - 移除 `docker-compose.yml` 中过时的 `version` 字段
 
+### 5. Monorepo node_modules 路径问题
+
+**问题**: 在 Dockerfile 中切换工作目录到子项目（`WORKDIR /app/apps/web`）后，找不到 `tsc` 等依赖，因为在 pnpm monorepo 中，依赖安装在根目录的 `node_modules`。
+
+**错误信息**: `sh: tsc: not found`
+
+**修复**:
+- 使用 `pnpm --filter <project>` 从根目录构建子项目
+- 不切换工作目录，保持在 `/app` 根目录
+- 复制所有 workspace 的 `package.json` 文件（api、web、shared）
+- 创建空的 `packages/shared` 包以完善 workspace 结构
+
+**关键命令变更**:
+```dockerfile
+# 之前（错误）
+WORKDIR /app/apps/web
+RUN npm run build
+
+# 之后（正确）
+RUN pnpm --filter web build  # 从 /app 根目录运行
+```
+
 ## 现在可以运行了！
 
 所有修复已提交并推送到分支 `claude/offline-tag-game-011CUqK7oabPWpLso6rbQrY9`。
