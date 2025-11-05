@@ -278,6 +278,41 @@ fi
 
 这样既支持正式的 migration 流程，也能在开发环境快速启动。
 
+### 14. Docker Healthcheck 端点需要认证
+
+**问题**: API 服务成功启动并通过所有健康检查，但 Docker 容器仍被标记为 unhealthy，导致 web 服务无法启动。
+
+**错误信息**:
+```
+dependency failed to start: container tag-game-api-1 is unhealthy
+```
+
+**现象**:
+- 服务器日志显示：`✨ Ready to play!`
+- 所有启动健康检查都通过
+- 但 `docker-compose ps` 显示容器状态为 unhealthy
+
+**原因**:
+- `docker-compose.yml` 的 healthcheck 配置检查 `/users/me` 端点
+- 这个端点需要 JWT 认证，healthcheck 请求没有提供 token
+- 导致每次检查都返回 401 Unauthorized
+- 3 次失败后容器被标记为 unhealthy
+
+**修复**:
+- 将 healthcheck 改为检查公开的 `/health` 端点
+- 这个端点不需要认证，直接返回 `{ status: 'ok' }`
+
+**docker-compose.yml 变更**:
+```yaml
+# 之前（错误）
+healthcheck:
+  test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/users/me", "||", "exit", "1"]
+
+# 修复（正确）✅
+healthcheck:
+  test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+```
+
 ## 启动自检功能
 
 为了确保服务在所有依赖就绪后才启动，我们添加了完整的启动自检流程：
