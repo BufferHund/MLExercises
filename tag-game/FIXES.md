@@ -182,6 +182,33 @@ RUN apk add --no-cache openssl
 ENV NODE_ENV=production
 ```
 
+### 11. ES Module 兼容性问题（healthcheck 脚本）
+
+**问题**: 健康检查脚本使用了 CommonJS 的 `require.main === module` 语法，但项目配置为 ES modules。
+
+**错误信息**:
+```
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/app/apps/api/package.json' contains "type": "module".
+```
+
+**原因**: 在 `package.json` 中配置了 `"type": "module"`，编译后的 JavaScript 文件被视为 ES modules，不能使用 CommonJS 的 `require` 语法。
+
+**修复**:
+- 移除 `if (require.main === module)` 检查
+- 直接调用 `main()` 函数（因为该脚本只在启动时被调用，不需要判断是否为主模块）
+
+**代码变更**:
+```typescript
+// 之前（错误）
+if (require.main === module) {
+  main();
+}
+
+// 修复（正确）✅
+main();
+```
+
 ## 启动自检功能
 
 为了确保服务在所有依赖就绪后才启动，我们添加了完整的启动自检流程：
