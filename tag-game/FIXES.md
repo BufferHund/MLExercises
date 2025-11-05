@@ -239,6 +239,45 @@ generator client {
 
 这样 Prisma 会在生成 client 时同时构建本地版本和目标部署环境版本的二进制文件。
 
+### 13. 数据库表不存在（缺少 migrations）
+
+**问题**: 健康检查时发现数据库表不存在，因为项目没有创建初始的 migration 文件。
+
+**错误信息**:
+```
+The table `main.User` does not exist in the current database.
+```
+
+同时 migrate deploy 显示：
+```
+No migration found in prisma/migrations
+No pending migrations to apply.
+```
+
+**原因**:
+- 项目中没有 `apps/api/prisma/migrations` 目录
+- `prisma migrate deploy` 只能应用已有的 migrations，不能创建表
+- 这是一个新项目，还没有生成初始的 migration
+
+**修复**:
+- 修改启动脚本 `start.sh`，添加智能判断逻辑：
+  - 如果存在 migrations 目录且不为空，使用 `prisma migrate deploy`（生产环境）
+  - 如果不存在 migrations，使用 `prisma db push`（自动同步 schema）
+
+**start.sh 变更**:
+```bash
+# 检查是否有 migrations 目录
+if [ -d "apps/api/prisma/migrations" ] && [ "$(ls -A apps/api/prisma/migrations 2>/dev/null)" ]; then
+    echo "   发现 migrations，运行 migrate deploy..."
+    npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma
+else
+    echo "   未找到 migrations，使用 db push 同步 schema..."
+    npx prisma db push --schema=apps/api/prisma/schema.prisma --accept-data-loss --skip-generate
+fi
+```
+
+这样既支持正式的 migration 流程，也能在开发环境快速启动。
+
 ## 启动自检功能
 
 为了确保服务在所有依赖就绪后才启动，我们添加了完整的启动自检流程：
