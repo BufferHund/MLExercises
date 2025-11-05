@@ -155,9 +155,7 @@ async function main() {
   }
 }
 
-// 如果是直接运行（不是被导入）
-if (require.main === module) {
-  main();
-}
+// 直接运行主函数（ES module 兼容）
+main();
 
 export { runHealthCheck };
