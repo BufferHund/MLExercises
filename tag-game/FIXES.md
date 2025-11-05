@@ -119,6 +119,33 @@ Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /app/d
 - 更新 CMD：从 `node dist/index.js` 改为 `node apps/api/dist/index.js`
 - 这样 Node.js 可以从 `/app/node_modules` 正确找到所有依赖
 
+### 9. Prisma Schema 路径错误（docker-compose.yml）
+
+**问题**: 虽然 Dockerfile 修复后构建成功，但启动容器时 Prisma migrate 命令找不到 schema 文件。
+
+**错误信息**:
+```
+Error: Could not find Prisma Schema that is required for this command.
+Checked following paths:
+schema.prisma: file not found
+prisma/schema.prisma: file not found
+```
+
+**原因**: `docker-compose.yml` 的 command 在 `/app` 目录下运行 `npx prisma migrate deploy`，但没有指定 schema 路径。Prisma 默认查找 `./prisma/schema.prisma`，而实际文件在 `/app/apps/api/prisma/schema.prisma`。
+
+**修复**:
+- 在 `docker-compose.yml` 的 command 中添加 `--schema` 参数
+- 更新 node 命令路径以匹配 Dockerfile 中的 CMD
+
+**命令变更**:
+```yaml
+# 之前（错误）
+command: sh -c "npx prisma migrate deploy && node dist/index.js"
+
+# 修复（正确）✅
+command: sh -c "npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && node apps/api/dist/index.js"
+```
+
 ## 现在可以运行了！
 
 所有修复已提交并推送到分支 `claude/offline-tag-game-011CUqK7oabPWpLso6rbQrY9`。
