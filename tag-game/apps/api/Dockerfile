@@ -45,8 +45,8 @@ RUN pnpm --filter api build
 FROM base AS runner
 WORKDIR /app
 
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
+# Install runtime dependencies: OpenSSL for Prisma, wget for healthcheck
+RUN apk add --no-cache openssl wget
 
 ENV NODE_ENV=production
 
@@ -61,8 +61,12 @@ COPY --from=builder --chown=apiuser:nodejs /app/apps/api/dist ./apps/api/dist
 COPY --from=builder --chown=apiuser:nodejs /app/apps/api/package.json ./apps/api/package.json
 COPY --from=builder --chown=apiuser:nodejs /app/apps/api/prisma ./apps/api/prisma
 
+# Copy and setup startup script
+COPY --chown=apiuser:nodejs apps/api/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 USER apiuser
 
 EXPOSE 3000
 
-CMD ["node", "apps/api/dist/index.js"]
+CMD ["/app/start.sh"]
