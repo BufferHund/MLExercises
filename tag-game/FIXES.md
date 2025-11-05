@@ -55,6 +55,7 @@
 - 不切换工作目录，保持在 `/app` 根目录
 - 复制所有 workspace 的 `package.json` 文件（api、web、shared）
 - 创建空的 `packages/shared` 包以完善 workspace 结构
+- **重要**：从 deps 阶段复制整个 `apps` 和 `packages` 目录结构（包含 node_modules 符号链接），然后用实际源码覆盖
 
 **关键命令变更**:
 ```dockerfile
@@ -62,8 +63,13 @@
 WORKDIR /app/apps/web
 RUN npm run build
 
-# 之后（正确）
-RUN pnpm --filter web build  # 从 /app 根目录运行
+# 修复 1（仍有问题）
+RUN pnpm --filter web build  # 子目录缺少 node_modules 链接
+
+# 修复 2（正确）✅
+COPY --from=deps /app/apps ./apps  # 复制包含 node_modules 链接的结构
+COPY apps/web ./apps/web           # 用实际源码覆盖
+RUN pnpm --filter web build        # 现在可以找到依赖了
 ```
 
 ## 现在可以运行了！
