@@ -72,6 +72,21 @@ COPY apps/web ./apps/web           # 用实际源码覆盖
 RUN pnpm --filter web build        # 现在可以找到依赖了
 ```
 
+### 6. TypeScript 编译错误
+
+**问题**: 前端构建时遇到 TypeScript 类型错误。
+
+**错误信息**:
+```
+error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+error TS6133: 'isRunner' is declared but its value is never read.
+error TS6133: 'captureMode' is declared but its value is never read.
+```
+
+**修复**:
+- 创建 `vite-env.d.ts` 定义 `import.meta.env` 类型
+- 删除未使用的变量（`isRunner`, `captureMode`, `setCaptureMode`）
+
 ## 现在可以运行了！
 
 所有修复已提交并推送到分支 `claude/offline-tag-game-011CUqK7oabPWpLso6rbQrY9`。
