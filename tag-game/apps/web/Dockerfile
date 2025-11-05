@@ -8,8 +8,11 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm
 
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
+# Copy workspace files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY apps/web/package.json ./apps/web/package.json
+
+# Install all dependencies
 RUN pnpm install --frozen-lockfile
 
 # Build the application
@@ -19,16 +22,24 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm
 
+# Copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --from=deps /app/package.json ./package.json
+COPY --from=deps /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --from=deps /app/.npmrc ./.npmrc
 
-RUN pnpm build
+# Copy web source code
+COPY apps/web ./apps/web
+
+# Build the application
+WORKDIR /app/apps/web
+RUN npm run build
 
 # Production image with nginx
 FROM nginx:alpine AS runner
 
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
+COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

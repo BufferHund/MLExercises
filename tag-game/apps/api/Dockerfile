@@ -8,8 +8,11 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm
 
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
+# Copy workspace files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY apps/api/package.json ./apps/api/package.json
+
+# Install all dependencies
 RUN pnpm install --frozen-lockfile
 
 # Build the application
@@ -19,14 +22,21 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm
 
+# Copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --from=deps /app/package.json ./package.json
+COPY --from=deps /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --from=deps /app/.npmrc ./.npmrc
+
+# Copy API source code
+COPY apps/api ./apps/api
 
 # Generate Prisma Client
-RUN pnpm prisma generate
+WORKDIR /app/apps/api
+RUN npx prisma generate
 
 # Build TypeScript
-RUN pnpm build
+RUN npm run build
 
 # Production image
 FROM base AS runner
@@ -38,10 +48,10 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 apiuser
 
 # Copy built app
-COPY --from=builder --chown=apiuser:nodejs /app/dist ./dist
+COPY --from=builder --chown=apiuser:nodejs /app/apps/api/dist ./dist
 COPY --from=builder --chown=apiuser:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=apiuser:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=apiuser:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=apiuser:nodejs /app/apps/api/package.json ./package.json
+COPY --from=builder --chown=apiuser:nodejs /app/apps/api/prisma ./prisma
 
 USER apiuser
 
