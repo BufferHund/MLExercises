@@ -102,6 +102,23 @@ error TS2322: Type 'string' is not assignable to type '"HUNTER" | "RUNNER"'.
 - 为 `user.role` 添加类型断言：`as 'HUNTER' | 'RUNNER'`
 - 在 tsconfig.json 中禁用 declaration 生成（生产环境不需要）
 
+### 8. 运行时找不到依赖包（Docker）
+
+**问题**: Docker 构建成功，但运行时报错找不到 `express` 等依赖包。
+
+**错误信息**:
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /app/dist/index.js
+```
+
+**原因**: 在 production runner 阶段，将编译后的代码从 `/app/apps/api/dist` 复制到 `/app/dist`，破坏了 monorepo 的目录结构，导致 Node.js 无法正确解析模块路径。
+
+**修复**:
+- 在 runner 阶段保持 monorepo 的目录结构
+- 复制到 `/app/apps/api/dist` 而不是 `/app/dist`
+- 更新 CMD：从 `node dist/index.js` 改为 `node apps/api/dist/index.js`
+- 这样 Node.js 可以从 `/app/node_modules` 正确找到所有依赖
+
 ## 现在可以运行了！
 
 所有修复已提交并推送到分支 `claude/offline-tag-game-011CUqK7oabPWpLso6rbQrY9`。
