@@ -19,7 +19,7 @@ services:
     volumes:
       - api_data:/app/data
       - api_uploads:/app/uploads
-    command: sh -c "npx prisma migrate deploy && node dist/index.js"
+    command: sh -c "npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && node apps/api/dist/index.js"
     restart: unless-stopped
 
   web:
