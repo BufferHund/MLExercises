@@ -182,6 +182,43 @@ RUN apk add --no-cache openssl
 ENV NODE_ENV=production
 ```
 
+## 启动自检功能
+
+为了确保服务在所有依赖就绪后才启动，我们添加了完整的启动自检流程：
+
+### 1. 健康检查脚本 (`apps/api/src/healthcheck.ts`)
+
+自动检查：
+- ✅ 环境变量配置
+- ✅ 数据库连接
+- ✅ 数据库表结构
+
+### 2. 启动脚本 (`apps/api/start.sh`)
+
+启动流程编排：
+1. **步骤 1/3**: 运行数据库迁移（`prisma migrate deploy`）
+2. **步骤 2/3**: 运行健康检查
+3. **步骤 3/3**: 启动应用服务器
+
+如果任何步骤失败，服务将不会启动。
+
+### 3. Docker 健康检查
+
+`docker-compose.yml` 配置了 healthcheck：
+- 每 10 秒检查一次 API 端点
+- 启动后 30 秒开始检查（给予足够的启动时间）
+- 3 次失败后标记为不健康
+
+前端服务会等待后端健康检查通过后才启动。
+
+### 4. 手动运行健康检查
+
+在本地开发环境中：
+```bash
+cd apps/api
+pnpm healthcheck
+```
+
 ## 现在可以运行了！
 
 所有修复已提交并推送到分支 `claude/offline-tag-game-011CUqK7oabPWpLso6rbQrY9`。
