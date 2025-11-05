@@ -50,14 +50,15 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 apiuser
 
-# Copy built app
-COPY --from=builder --chown=apiuser:nodejs /app/apps/api/dist ./dist
+# Copy the entire monorepo structure to maintain proper paths
 COPY --from=builder --chown=apiuser:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=apiuser:nodejs /app/apps/api/package.json ./package.json
-COPY --from=builder --chown=apiuser:nodejs /app/apps/api/prisma ./prisma
+COPY --from=builder --chown=apiuser:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=apiuser:nodejs /app/apps/api/dist ./apps/api/dist
+COPY --from=builder --chown=apiuser:nodejs /app/apps/api/package.json ./apps/api/package.json
+COPY --from=builder --chown=apiuser:nodejs /app/apps/api/prisma ./apps/api/prisma
 
 USER apiuser
 
 EXPOSE 3000
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "apps/api/dist/index.js"]
