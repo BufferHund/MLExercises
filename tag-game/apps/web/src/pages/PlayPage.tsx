@@ -6,6 +6,7 @@ import { useSocket } from '../hooks/useSocket';
 import { useGeolocation, isInsideBounds } from '../hooks/useGeolocation';
 import { useGameStore } from '../store/gameStore';
 import { games, items, captures } from '../api/client';
+import CaptureDialog from '../components/CaptureDialog';
 import type { Game, AreaBounds, Pickup } from '../types';
 
 // 修复 Leaflet 图标
@@ -22,6 +23,7 @@ export default function PlayPage() {
   const [game, setGame] = useState<Game | null>(null);
   const [backpack, setBackpack] = useState<Pickup[]>([]);
   const [scanMode, setScanMode] = useState(false);
+  const [showCaptureDialog, setShowCaptureDialog] = useState(false);
 
   const user = useGameStore((state) => state.user);
   const nearby = useGameStore((state) => state.nearby);
@@ -83,18 +85,23 @@ export default function PlayPage() {
     }
   };
 
-  const handleCapture = async () => {
+  const handleCaptureClick = () => {
     if (!position) {
       alert('无法获取位置');
       return;
     }
+    if (user?.isEliminated) {
+      alert('你已被淘汰，无法抓捕他人');
+      return;
+    }
+    setShowCaptureDialog(true);
+  };
 
-    const runnerId = prompt('输入逃亡者 ID:');
-    if (!runnerId) return;
-
-    // 模拟拍照
-    const confirmed = confirm('确认抓捕？（实际版本需拍照）');
-    if (!confirmed) return;
+  const handleCapture = async (runnerId: string, photo: File) => {
+    if (!position) {
+      alert('无法获取位置');
+      return;
+    }
 
     try {
       const formData = new FormData();
@@ -102,10 +109,11 @@ export default function PlayPage() {
       formData.append('gameId', gameId!);
       formData.append('lat', position.lat.toString());
       formData.append('lng', position.lng.toString());
-      // 实际版本需添加 photo 文件
+      formData.append('photo', photo);
 
-      const result = await captures.create(formData);
-      alert(`抓捕成功！获得 ${result.points} 分`);
+      await captures.create(formData);
+      setShowCaptureDialog(false);
+      alert('抓捕照片已提交，等待管理员审核');
       loadGame();
     } catch (err: any) {
       alert(err.response?.data?.error || '抓捕失败');
@@ -122,6 +130,7 @@ export default function PlayPage() {
       : false;
 
   const isHunter = user?.role === 'HUNTER';
+  const nearbyRunners = nearby.filter((pos) => pos.role === 'RUNNER');
 
   return (
     <div className="h-screen flex flex-col">
@@ -209,11 +218,12 @@ export default function PlayPage() {
           </button>
           {isHunter && (
             <button
-              onClick={handleCapture}
-              disabled={!insideBounds}
+              onClick={handleCaptureClick}
+              disabled={!insideBounds || user?.isEliminated}
               className="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white font-semibold py-2 rounded"
+              title={user?.isEliminated ? '已被淘汰，无法抓捕' : '抓捕逃亡者'}
             >
-              抓捕
+              {user?.isEliminated ? '❌ 已淘汰' : '抓捕'}
             </button>
           )}
         </div>
@@ -251,6 +261,15 @@ export default function PlayPage() {
           </div>
         )}
       </div>
+
+      {/* 抓捕对话框 */}
+      {showCaptureDialog && (
+        <CaptureDialog
+          nearbyRunners={nearbyRunners}
+          onCapture={handleCapture}
+          onCancel={() => setShowCaptureDialog(false)}
+        />
+      )}
     </div>
   );
 }

@@ -160,6 +160,14 @@ export default function LobbyPage() {
             >
               开始游戏
             </button>
+            {user?.isAdmin && (
+              <button
+                onClick={() => navigate(`/admin/${gameId}`)}
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 rounded-lg transition"
+              >
+                🛠️ 管理员面板
+              </button>
+            )}
           </div>
         )}
 

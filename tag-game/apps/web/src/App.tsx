@@ -3,6 +3,7 @@ import JoinPage from './pages/JoinPage';
 import LobbyPage from './pages/LobbyPage';
 import PlayPage from './pages/PlayPage';
 import ResultPage from './pages/ResultPage';
+import AdminPage from './pages/AdminPage';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/lobby/:gameId" element={<LobbyPage />} />
         <Route path="/play/:gameId" element={<PlayPage />} />
         <Route path="/result/:gameId" element={<ResultPage />} />
+        <Route path="/admin/:gameId" element={<AdminPage />} />
       </Routes>
     </BrowserRouter>
   );

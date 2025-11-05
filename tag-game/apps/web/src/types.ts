@@ -7,6 +7,7 @@ export interface User {
   nickname: string;
   role?: Role;
   badgeCode: string;
+  isAdmin: boolean;
   isEliminated: boolean;
   createdAt: string;
 }
@@ -35,7 +36,11 @@ export interface Item {
   id: string;
   code: string;
   type: ItemType;
+  name: string;
+  description?: string;
   durationSec: number;
+  gameId: string;
+  isUsed: boolean;
 }
 
 export interface Pickup {
@@ -49,6 +54,8 @@ export interface Pickup {
   item: Item;
 }
 
+export type VerificationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
 export interface Capture {
   id: string;
   hunterId: string;
@@ -57,7 +64,10 @@ export interface Capture {
   photoUrl: string;
   lat: number;
   lng: number;
-  verified: boolean;
+  verificationStatus: VerificationStatus;
+  verifiedBy?: string;
+  verificationNote?: string;
+  verifiedAt?: string;
   createdAt: string;
   hunter?: User;
   runner?: User;
