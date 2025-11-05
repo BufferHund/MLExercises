@@ -22,7 +22,6 @@ export default function PlayPage() {
   const [game, setGame] = useState<Game | null>(null);
   const [backpack, setBackpack] = useState<Pickup[]>([]);
   const [scanMode, setScanMode] = useState(false);
-  const [captureMode, setCaptureMode] = useState(false);
 
   const user = useGameStore((state) => state.user);
   const nearby = useGameStore((state) => state.nearby);

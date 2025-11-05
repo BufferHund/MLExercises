@@ -69,7 +69,6 @@ export default function LobbyPage() {
 
   const myParticipation = game?.participations?.find((p) => p.userId === user?.id);
   const isHunter = myParticipation?.team === 'HUNTER';
-  const isRunner = myParticipation?.team === 'RUNNER';
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
