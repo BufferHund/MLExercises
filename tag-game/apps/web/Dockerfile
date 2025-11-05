@@ -24,13 +24,15 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm
 
-# Copy dependencies
+# Copy dependencies and workspace structure
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package.json ./package.json
 COPY --from=deps /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --from=deps /app/.npmrc ./.npmrc
+COPY --from=deps /app/apps ./apps
+COPY --from=deps /app/packages ./packages
 
-# Copy web source code
+# Overwrite with actual source code
 COPY apps/web ./apps/web
 
 # Build the application (from root, using pnpm filter)
