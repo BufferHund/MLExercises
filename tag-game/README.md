@@ -134,19 +134,150 @@ tag-game/
 
 ## 部署
 
-### Docker
+### Docker 部署（推荐）
 
+**启动服务**:
 ```bash
-docker-compose up -d
+# 构建并启动
+docker-compose up -d --build
+
+# 查看日志
+docker-compose logs -f
+
+# 查看服务状态
+docker-compose ps
 ```
+
+**停止服务**:
+```bash
+docker-compose down
+
+# 完全清理（包括数据卷）
+docker-compose down -v
+```
+
+**访问**:
+- 前端: http://localhost
+- 后端 API: http://localhost:3000
+- 健康检查: 自动运行，30秒内完成后服务才可用
 
 ### 环境变量
 
 参考 `.env.example` 配置：
-- `JWT_SECRET`: JWT 密钥
+- `JWT_SECRET`: JWT 密钥（默认: change-this-secret）
 - `DATABASE_URL`: 数据库连接
 - `UPLOAD_DIR`: 上传目录
 - `MAX_UPLOAD_MB`: 最大上传大小
+
+## 🏥 健康检查系统
+
+项目内置完整的启动前健康检查：
+
+### 自动检查项
+1. ✅ **环境变量配置** - 验证必需的环境变量
+2. ✅ **数据库连接** - 确保数据库可访问
+3. ✅ **数据库表结构** - 验证所有必需的表都存在
+
+### 手动运行
+```bash
+cd apps/api
+pnpm healthcheck
+```
+
+### Docker 健康检查
+- 每 10 秒检查 API 端点
+- 启动后 30 秒开始检查
+- 3 次失败后标记为不健康
+- 前端服务会等待后端健康后才启动
+
+## 🛠️ 故障排除
+
+### 容器无法启动
+
+**查看日志**:
+```bash
+docker-compose logs api
+```
+
+**常见问题**:
+1. **OpenSSL 错误**: 已在 Dockerfile 中修复，重新构建即可
+2. **Prisma 引擎错误**: 已配置正确的 binaryTargets
+3. **表不存在**: 启动脚本会自动使用 `db push` 同步 schema
+
+### 重新构建
+
+```bash
+# 完全清理并重建
+docker-compose down -v
+docker-compose up --build
+
+# 强制重建特定服务
+docker-compose build --no-cache api
+docker-compose up -d api
+```
+
+### 查看容器内部
+
+```bash
+# 进入 API 容器
+docker exec -it tag-game-api-1 sh
+
+# 检查文件
+ls -la /app/apps/api/
+
+# 手动运行健康检查
+node /app/apps/api/dist/healthcheck.js
+```
+
+## 📚 更多文档
+
+- [修复历史](./FIXES.md) - 所有遇到的问题和解决方案
+- [API 文档](#api-文档) - 完整的 API 端点说明
+- [游戏规则](#游戏规则) - 详细的游戏玩法
+
+## 🔧 常用命令
+
+```bash
+# 本地开发
+pnpm install              # 安装依赖
+pnpm dev                  # 启动开发服务器
+pnpm --filter api build   # 构建后端
+pnpm --filter web build   # 构建前端
+
+# 数据库
+cd apps/api
+pnpm db:migrate          # 创建 migration
+pnpm db:seed             # 填充测试数据
+pnpm db:studio           # 打开 Prisma Studio
+npx prisma generate      # 重新生成 Prisma Client
+
+# Docker
+docker-compose ps        # 查看状态
+docker-compose logs -f   # 实时日志
+docker-compose restart   # 重启服务
+```
+
+## 📋 已知问题
+
+- SQLite 不支持原生 enum 类型（使用 String + 应用层验证）
+- 生产环境建议使用 PostgreSQL
+- 地理围栏在本地开发时可能不准确（需要 HTTPS 才能获取精确 GPS）
+
+## 🔐 生产环境建议
+
+1. **使用强 JWT 密钥**
+```bash
+openssl rand -base64 32
+```
+
+2. **切换到 PostgreSQL**
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/taggame"
+```
+
+3. **配置 HTTPS** - 使用 nginx + Let's Encrypt
+
+4. **限制 CORS** - 修改 `apps/api/src/index.ts`
 
 ## License
 
