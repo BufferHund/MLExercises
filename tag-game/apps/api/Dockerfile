@@ -11,6 +11,8 @@ RUN npm install -g pnpm
 # Copy workspace files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
 COPY apps/api/package.json ./apps/api/package.json
+COPY apps/web/package.json ./apps/web/package.json
+COPY packages/shared/package.json ./packages/shared/package.json
 
 # Install all dependencies
 RUN pnpm install --frozen-lockfile
@@ -31,12 +33,11 @@ COPY --from=deps /app/.npmrc ./.npmrc
 # Copy API source code
 COPY apps/api ./apps/api
 
-# Generate Prisma Client
-WORKDIR /app/apps/api
-RUN npx prisma generate
+# Generate Prisma Client (from root, using filter)
+RUN cd /app/apps/api && npx prisma generate
 
-# Build TypeScript
-RUN npm run build
+# Build TypeScript (from root, using pnpm filter)
+RUN pnpm --filter api build
 
 # Production image
 FROM base AS runner

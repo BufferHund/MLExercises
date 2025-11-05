@@ -10,7 +10,9 @@ RUN npm install -g pnpm
 
 # Copy workspace files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY apps/api/package.json ./apps/api/package.json
 COPY apps/web/package.json ./apps/web/package.json
+COPY packages/shared/package.json ./packages/shared/package.json
 
 # Install all dependencies
 RUN pnpm install --frozen-lockfile
@@ -31,9 +33,8 @@ COPY --from=deps /app/.npmrc ./.npmrc
 # Copy web source code
 COPY apps/web ./apps/web
 
-# Build the application
-WORKDIR /app/apps/web
-RUN npm run build
+# Build the application (from root, using pnpm filter)
+RUN pnpm --filter web build
 
 # Production image with nginx
 FROM nginx:alpine AS runner
