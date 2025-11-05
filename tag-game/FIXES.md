@@ -87,6 +87,21 @@ error TS6133: 'captureMode' is declared but its value is never read.
 - 创建 `vite-env.d.ts` 定义 `import.meta.env` 类型
 - 删除未使用的变量（`isRunner`, `captureMode`, `setCaptureMode`）
 
+### 7. 后端 TypeScript 类型错误
+
+**问题**: 后端构建时遇到类型推断和类型兼容性错误。
+
+**错误信息**:
+```
+error TS2742: The inferred type of 'router' cannot be named without a reference...
+error TS2322: Type 'string' is not assignable to type '"HUNTER" | "RUNNER"'.
+```
+
+**修复**:
+- 为所有路由文件的 `router` 添加显式类型注解：`const router: Router = Router()`
+- 为 `user.role` 添加类型断言：`as 'HUNTER' | 'RUNNER'`
+- 在 tsconfig.json 中禁用 declaration 生成（生产环境不需要）
+
 ## 现在可以运行了！
 
 所有修复已提交并推送到分支 `claude/offline-tag-game-011CUqK7oabPWpLso6rbQrY9`。
