@@ -49,30 +49,31 @@ export default function ImmersiveReader({ fileName, fileType, onClose }: Immersi
 
   return (
     <div
-      className={`fixed inset-0 z-50 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}
+      className={`fixed inset-0 z-50 flex flex-col ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}
       onMouseMove={handleMouseMove}
     >
       {/* 顶部控制栏 */}
       <div
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`flex-shrink-0 transition-all duration-300 ${
           showControls ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
         }`}
       >
-        <div className="glass border-b border-white/10">
-          <div className="flex items-center justify-between p-4">
+        <div className={`${theme === 'dark' ? 'bg-gray-900/95 backdrop-blur-xl' : 'bg-gray-50/95 backdrop-blur-xl'} border-b ${theme === 'dark' ? 'border-white/10' : 'border-gray-900/10'}`}>
+          <div className="flex items-center justify-between px-6 py-4">
             {/* 左侧 */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                className={`p-2 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors`}
+                title="关闭阅读器"
               >
-                <X className="w-5 h-5 text-white" />
+                <X className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} />
               </button>
-              <div>
-                <h3 className="text-white font-semibold text-sm truncate max-w-[200px]">
+              <div className="min-w-0">
+                <h3 className={`font-semibold text-sm truncate max-w-[300px] ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                   {fileName}
                 </h3>
-                <p className="text-white/60 text-xs">
+                <p className={`text-xs ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`}>
                   {fileType.toUpperCase()} 格式
                 </p>
               </div>
@@ -82,7 +83,8 @@ export default function ImmersiveReader({ fileName, fileType, onClose }: Immersi
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                className={`p-2 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors`}
+                title={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
               >
                 {theme === 'dark' ? (
                   <Sun className="w-5 h-5 text-white" />
@@ -92,7 +94,7 @@ export default function ImmersiveReader({ fileName, fileType, onClose }: Immersi
               </button>
               <button
                 onClick={toggleFullscreen}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-white text-sm font-medium transition-colors"
+                className={`px-4 py-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-gray-900/10 hover:bg-gray-900/20 text-gray-900'} rounded-xl text-sm font-medium transition-colors`}
               >
                 {isFullscreen ? '退出全屏' : '全屏阅读'}
               </button>
@@ -102,37 +104,91 @@ export default function ImmersiveReader({ fileName, fileType, onClose }: Immersi
       </div>
 
       {/* 主阅读区域 */}
-      <div className="h-full flex items-center justify-center p-8 pt-24 pb-20">
-        <div className={`max-w-4xl w-full h-full overflow-y-auto ${
-          theme === 'dark' ? 'text-white/90' : 'text-gray-900'
-        }`}>
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto px-8 py-12">
           <div
-            className="prose prose-lg max-w-none"
+            className={`${theme === 'dark' ? 'text-white/90' : 'text-gray-900'}`}
             style={{ fontSize: `${fontSize}px`, lineHeight: 1.8 }}
           >
             {/* 这里将显示实际的文档内容 */}
-            <div className="text-center py-20">
-              <div className={`inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-6 ${
-                theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10'
+            <div className="text-center py-16">
+              <div className={`inline-flex items-center justify-center w-24 h-24 rounded-3xl mb-8 ${
+                theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'
               }`}>
-                <Menu className={`w-10 h-10 ${theme === 'dark' ? 'text-white/50' : 'text-gray-900/50'}`} />
+                <Menu className={`w-12 h-12 ${theme === 'dark' ? 'text-white/30' : 'text-gray-900/30'}`} />
               </div>
-              <h3 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+
+              <h3 className={`text-3xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                 沉浸式阅读模式
               </h3>
-              <p className={`text-base mb-6 ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`}>
+
+              <p className={`text-lg mb-8 ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`}>
                 {fileName}
               </p>
-              <p className={`text-sm ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
-                完整实现需要根据文件格式集成相应的渲染库：
+
+              <div className={`max-w-2xl mx-auto p-8 rounded-3xl mb-8 ${
+                theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'
+              }`}>
+                <p className={`text-base mb-6 font-medium ${theme === 'dark' ? 'text-white/70' : 'text-gray-700'}`}>
+                  💡 完整实现需要集成相应的渲染库
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                  <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'}`}>
+                    <div className="text-2xl mb-2">📖</div>
+                    <div className={`font-semibold text-sm mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                      EPUB
+                    </div>
+                    <div className={`text-xs ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
+                      epub.js
+                    </div>
+                  </div>
+
+                  <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'}`}>
+                    <div className="text-2xl mb-2">📄</div>
+                    <div className={`font-semibold text-sm mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                      PDF
+                    </div>
+                    <div className={`text-xs ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
+                      pdfjs-dist
+                    </div>
+                  </div>
+
+                  <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'}`}>
+                    <div className="text-2xl mb-2">📝</div>
+                    <div className={`font-semibold text-sm mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                      TXT / MD
+                    </div>
+                    <div className={`text-xs ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
+                      纯文本渲染
+                    </div>
+                  </div>
+
+                  <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'}`}>
+                    <div className="text-2xl mb-2">📚</div>
+                    <div className={`font-semibold text-sm mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                      MOBI / AZW3
+                    </div>
+                    <div className={`text-xs ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
+                      mobi.js
+                    </div>
+                  </div>
+
+                  <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'} sm:col-span-2`}>
+                    <div className="text-2xl mb-2">📃</div>
+                    <div className={`font-semibold text-sm mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                      DOCX
+                    </div>
+                    <div className={`text-xs ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
+                      mammoth.js
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <p className={`text-sm ${theme === 'dark' ? 'text-white/40' : 'text-gray-500'}`}>
+                移动鼠标显示/隐藏控制栏 • 全屏模式下 3 秒自动隐藏
               </p>
-              <ul className={`text-sm mt-4 space-y-2 ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
-                <li>📖 EPUB: epub.js</li>
-                <li>📄 PDF: pdfjs-dist</li>
-                <li>📝 TXT/MD: 纯文本渲染</li>
-                <li>📚 MOBI/AZW3: mobi.js 或转换为 EPUB</li>
-                <li>📃 DOCX: mammoth.js</li>
-              </ul>
             </div>
           </div>
         </div>
@@ -140,68 +196,82 @@ export default function ImmersiveReader({ fileName, fileType, onClose }: Immersi
 
       {/* 底部控制栏 */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`flex-shrink-0 transition-all duration-300 ${
           showControls ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
         }`}
       >
-        <div className="glass border-t border-white/10">
+        <div className={`${theme === 'dark' ? 'bg-gray-900/95 backdrop-blur-xl' : 'bg-gray-50/95 backdrop-blur-xl'} border-t ${theme === 'dark' ? 'border-white/10' : 'border-gray-900/10'}`}>
           {/* 进度条 */}
-          <div className="px-4 pt-3">
+          <div className="px-6 pt-4">
             <div className="flex items-center gap-4">
-              <span className={`text-xs font-medium ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
+              <span className={`text-xs font-semibold min-w-[3rem] text-right ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
                 {progress}%
               </span>
-              <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div className={`flex-1 h-2 rounded-full overflow-hidden ${theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10'}`}>
                 <div
                   className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <span className={`text-xs font-medium ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
+              <span className={`text-xs font-semibold min-w-[3rem] ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
                 100%
               </span>
             </div>
           </div>
 
           {/* 控制按钮 */}
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-center justify-between px-6 py-4">
+            {/* 导航控制 */}
             <div className="flex items-center gap-2">
               <button
                 onClick={handlePrevPage}
-                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                className={`p-2.5 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors`}
+                title="上一页"
               >
                 <ChevronLeft className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} />
               </button>
               <button
                 onClick={handleNextPage}
-                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                className={`p-2.5 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors`}
+                title="下一页"
               >
                 <ChevronRight className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} />
               </button>
             </div>
 
+            {/* 功能控制 */}
             <div className="flex items-center gap-3">
-              <button className="p-2 hover:bg-white/10 rounded-xl transition-colors">
+              <button
+                className={`p-2.5 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors`}
+                title="添加书签"
+              >
                 <Bookmark className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} />
               </button>
-              <div className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-xl">
+
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10'}`}>
                 <button
                   onClick={() => setFontSize(Math.max(12, fontSize - 2))}
-                  className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
+                  className={`text-sm font-bold transition-colors ${theme === 'dark' ? 'text-white hover:text-white/70' : 'text-gray-900 hover:text-gray-600'}`}
+                  title="减小字号"
                 >
                   A-
                 </button>
-                <span className={`text-xs ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`}>
+                <span className={`text-xs font-semibold min-w-[2rem] text-center ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`}>
                   {fontSize}
                 </span>
                 <button
                   onClick={() => setFontSize(Math.min(32, fontSize + 2))}
-                  className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
+                  className={`text-lg font-bold transition-colors ${theme === 'dark' ? 'text-white hover:text-white/70' : 'text-gray-900 hover:text-gray-600'}`}
+                  title="增大字号"
                 >
                   A+
                 </button>
               </div>
-              <button className="p-2 hover:bg-white/10 rounded-xl transition-colors">
+
+              <button
+                className={`p-2.5 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors`}
+                title="设置"
+              >
                 <Settings className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} />
               </button>
             </div>
