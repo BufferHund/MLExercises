@@ -57,6 +57,7 @@ export default {
         'pulse-soft': 'pulseSoft 3s ease-in-out infinite',
         'glow': 'glow 2s ease-in-out infinite alternate',
         'shimmer': 'shimmer 2.5s ease-in-out infinite',
+        'kindle-flip': 'kindleFlip 0.3s ease-in-out',
       },
       keyframes: {
         slideUp: {
@@ -141,6 +142,18 @@ export default {
           },
           '100%': {
             backgroundPosition: '1000px 0',
+          },
+        },
+        kindleFlip: {
+          '0%': {
+            opacity: '1',
+          },
+          '50%': {
+            opacity: '0.3',
+            filter: 'invert(0.1)',
+          },
+          '100%': {
+            opacity: '1',
           },
         },
       },

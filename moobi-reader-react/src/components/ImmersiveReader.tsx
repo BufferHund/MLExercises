@@ -68,6 +68,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
   const [selectedText, setSelectedText] = useState('');
   const [highlightColor, setHighlightColor] = useState('#FFFF00');
   const [showSearch, setShowSearch] = useState(false);
+  const [isPageFlipping, setIsPageFlipping] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Refs
@@ -428,6 +429,10 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
   };
 
   const handleNextPage = () => {
+    // 触发Kindle风格的翻页动画
+    setIsPageFlipping(true);
+    setTimeout(() => setIsPageFlipping(false), 300);
+
     if (fileType === 'pdf' && (window as any).pdfReaderControls) {
       (window as any).pdfReaderControls.nextPage();
     } else if (fileType === 'epub' && (window as any).epubReaderControls) {
@@ -438,6 +443,10 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
   };
 
   const handlePrevPage = () => {
+    // 触发Kindle风格的翻页动画
+    setIsPageFlipping(true);
+    setTimeout(() => setIsPageFlipping(false), 300);
+
     if (fileType === 'pdf' && (window as any).pdfReaderControls) {
       (window as any).pdfReaderControls.prevPage();
     } else if (fileType === 'epub' && (window as any).epubReaderControls) {
@@ -524,13 +533,13 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
     switch (layoutMode) {
       case 'elegant':
-        return isExpanded ? 'max-w-[1600px]' : 'max-w-7xl'; // 控制栏隐藏时更宽
+        return isExpanded ? 'max-w-5xl' : 'max-w-4xl'; // 控制栏隐藏时稍宽
       case 'a4':
         return 'max-w-[210mm]'; // A4纸张模式固定
       case 'full':
         return 'max-w-full'; // 全宽模式
       default:
-        return isExpanded ? 'max-w-[1600px]' : 'max-w-7xl';
+        return isExpanded ? 'max-w-5xl' : 'max-w-4xl';
     }
   };
 
@@ -687,7 +696,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       </div>
 
       {/* 主阅读区域 */}
-      <div ref={readerContainerRef} className={`flex-1 overflow-y-auto flex items-center justify-center ${themeColors.bg} ${themeColors.text} transition-colors duration-300`}>
+      <div ref={readerContainerRef} className={`flex-1 overflow-y-auto flex items-center justify-center ${themeColors.bg} ${themeColors.text} transition-colors duration-300 ${isPageFlipping ? 'animate-kindle-flip' : ''}`}>
         {/* 原生PDF模式 - 完全占满 */}
         {fileType === 'pdf' && pdfDisplayMode === 'native' ? (
           <div className="w-full h-full">
@@ -856,20 +865,20 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
       {/* 常驻浮动控制栏 - 右下角 - 只在主控制栏隐藏时显示，原生PDF模式下不显示 */}
       {!zenMode && !showControls && !(fileType === 'pdf' && pdfDisplayMode === 'native') && (
-        <div className={`fixed bottom-6 right-6 z-50 ${themeColors.controlBg} backdrop-blur-xl rounded-2xl shadow-2xl border ${themeColors.border} p-3 transition-all duration-300`}>
+        <div className={`fixed bottom-6 right-6 z-50 ${themeColors.controlBg} backdrop-blur-xl rounded-2xl shadow-2xl border ${themeColors.border} p-3 animate-scale-in`}>
           <div className="flex flex-col gap-2">
             {/* 翻页控制 */}
             <div className="flex gap-2">
               <button
                 onClick={handlePrevPage}
-                className={`p-2 ${themeColors.hover} rounded-xl transition-colors`}
+                className={`p-2 ${themeColors.hover} rounded-xl transition-colors flex items-center justify-center`}
                 title="上一页 (←)"
               >
                 <ChevronLeft className={`w-4 h-4 ${themeColors.text}`} />
               </button>
               <button
                 onClick={handleNextPage}
-                className={`p-2 ${themeColors.hover} rounded-xl transition-colors`}
+                className={`p-2 ${themeColors.hover} rounded-xl transition-colors flex items-center justify-center`}
                 title="下一页 (→)"
               >
                 <ChevronRight className={`w-4 h-4 ${themeColors.text}`} />
@@ -882,7 +891,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
             {/* 常用功能 */}
             <button
               onClick={handleAddBookmark}
-              className={`p-2 ${themeColors.hover} rounded-xl transition-colors`}
+              className={`p-2 ${themeColors.hover} rounded-xl transition-colors flex items-center justify-center`}
               title="添加书签"
             >
               <Bookmark className={`w-4 h-4 ${themeColors.text}`} />
@@ -890,7 +899,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
             <button
               onClick={() => setShowSettings(true)}
-              className={`p-2 ${themeColors.hover} rounded-xl transition-colors`}
+              className={`p-2 ${themeColors.hover} rounded-xl transition-colors flex items-center justify-center`}
               title="设置"
             >
               <Settings className={`w-4 h-4 ${themeColors.text}`} />
@@ -1006,7 +1015,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                     onClick={() => setLayoutMode('elegant')}
                     className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
                       layoutMode === 'elegant'
-                        ? 'bg-gradient-to-r from-primary to-secondary !text-white'
+                        ? 'bg-primary text-white shadow-md'
                         : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                     }`}
                   >
@@ -1017,7 +1026,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                       onClick={() => setLayoutMode('a4')}
                       className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
                         layoutMode === 'a4'
-                          ? 'bg-gradient-to-r from-primary to-secondary !text-white'
+                          ? 'bg-primary text-white shadow-md'
                           : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                       }`}
                     >
@@ -1028,7 +1037,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                     onClick={() => setLayoutMode('full')}
                     className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
                       layoutMode === 'full'
-                        ? 'bg-gradient-to-r from-primary to-secondary !text-white'
+                        ? 'bg-primary text-white shadow-md'
                         : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                     }`}
                   >
@@ -1048,7 +1057,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                       onClick={() => setPageMode('single')}
                       className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
                         pageMode === 'single'
-                          ? 'bg-gradient-to-r from-primary to-secondary !text-white'
+                          ? 'bg-primary text-white shadow-md'
                           : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                       }`}
                     >
@@ -1058,7 +1067,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                       onClick={() => setPageMode('double')}
                       className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
                         pageMode === 'double'
-                          ? 'bg-gradient-to-r from-primary to-secondary !text-white'
+                          ? 'bg-primary text-white shadow-md'
                           : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                       }`}
                     >
