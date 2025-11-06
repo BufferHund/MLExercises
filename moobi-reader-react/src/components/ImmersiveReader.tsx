@@ -427,8 +427,8 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     switch (theme) {
       case 'light':
         return {
-          bg: 'bg-gray-200', // 更暗的背景
-          paper: 'bg-white', // 纸张颜色
+          bg: 'bg-gray-100', // 浅灰背景
+          paper: 'bg-white', // 白纸张
           text: 'text-gray-900',
           border: 'border-gray-900/10',
           controlBg: 'bg-white/95',
@@ -436,8 +436,8 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         };
       case 'dark':
         return {
-          bg: 'bg-black', // 更暗的背景
-          paper: 'bg-gray-900', // 纸张颜色
+          bg: 'bg-gray-800', // 深灰背景（不是黑色）
+          paper: 'bg-gray-900', // 更深的纸张
           text: 'text-white',
           border: 'border-white/10',
           controlBg: 'bg-gray-900/95',
@@ -445,8 +445,8 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         };
       case 'sepia':
         return {
-          bg: 'bg-[#3d3426]', // 深棕色背景
-          paper: 'bg-[#f4ecd8]', // 米色纸张
+          bg: 'bg-[#e5d5b7]', // 浅棕色背景
+          paper: 'bg-[#f4ecd8]', // 更亮的米色纸张
           text: 'text-[#5c4a2f]',
           border: 'border-[#5c4a2f]/10',
           controlBg: 'bg-[#f4ecd8]/95',
@@ -454,8 +454,8 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         };
       case 'green':
         return {
-          bg: 'bg-[#1a2e1a]', // 深绿色背景
-          paper: 'bg-[#cce8cc]', // 浅绿色纸张
+          bg: 'bg-[#b8d4b8]', // 浅绿色背景
+          paper: 'bg-[#cce8cc]', // 更亮的绿色纸张
           text: 'text-[#2d4a2d]',
           border: 'border-[#2d4a2d]/10',
           controlBg: 'bg-[#cce8cc]/95',
@@ -463,8 +463,8 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         };
       case 'blue':
         return {
-          bg: 'bg-[#0d1f35]', // 深蓝色背景
-          paper: 'bg-[#e0f2ff]', // 浅蓝色纸张
+          bg: 'bg-[#c5e3f6]', // 浅蓝色背景
+          paper: 'bg-[#e0f2ff]', // 更亮的蓝色纸张
           text: 'text-[#1e3a5f]',
           border: 'border-[#1e3a5f]/10',
           controlBg: 'bg-[#e0f2ff]/95',
@@ -472,7 +472,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         };
       default:
         return {
-          bg: 'bg-black',
+          bg: 'bg-gray-800',
           paper: 'bg-gray-900',
           text: 'text-white',
           border: 'border-white/10',
@@ -583,6 +583,45 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
             {/* 右侧控制 */}
             <div className="flex items-center gap-2">
+              {/* 主题快速切换 */}
+              <div className="flex items-center gap-1 px-2 py-1 rounded-xl bg-black/5">
+                <button
+                  onClick={() => setTheme('light')}
+                  className={`p-1.5 rounded-lg transition-colors ${theme === 'light' ? 'bg-white shadow' : 'hover:bg-white/50'}`}
+                  title="浅色"
+                >
+                  <span className="text-sm">☀️</span>
+                </button>
+                <button
+                  onClick={() => setTheme('dark')}
+                  className={`p-1.5 rounded-lg transition-colors ${theme === 'dark' ? 'bg-gray-900 shadow' : 'hover:bg-gray-900/20'}`}
+                  title="深色"
+                >
+                  <span className="text-sm">🌙</span>
+                </button>
+                <button
+                  onClick={() => setTheme('sepia')}
+                  className={`p-1.5 rounded-lg transition-colors ${theme === 'sepia' ? 'bg-[#f4ecd8] shadow' : 'hover:bg-[#f4ecd8]/50'}`}
+                  title="米色"
+                >
+                  <span className="text-sm">📖</span>
+                </button>
+                <button
+                  onClick={() => setTheme('green')}
+                  className={`p-1.5 rounded-lg transition-colors ${theme === 'green' ? 'bg-[#cce8cc] shadow' : 'hover:bg-[#cce8cc]/50'}`}
+                  title="绿色"
+                >
+                  <span className="text-sm">🌿</span>
+                </button>
+                <button
+                  onClick={() => setTheme('blue')}
+                  className={`p-1.5 rounded-lg transition-colors ${theme === 'blue' ? 'bg-[#e0f2ff] shadow' : 'hover:bg-[#e0f2ff]/50'}`}
+                  title="蓝色"
+                >
+                  <span className="text-sm">💙</span>
+                </button>
+              </div>
+
               <button
                 onClick={() => setShowSettings(true)}
                 className={`p-2 ${themeColors.hover} rounded-xl transition-colors`}
@@ -605,8 +644,8 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       {/* 主阅读区域 */}
       <div ref={readerContainerRef} className="flex-1 overflow-y-auto">
         {/* 纸张容器 - 有阴影效果 */}
-        <div className={`${getLayoutWidth()} mx-auto ${layoutMode === 'full' ? 'px-0' : 'px-4 sm:px-6'} py-12 pb-32`}>
-          <div className={`${themeColors.paper} ${themeColors.text} ${layoutMode === 'full' ? 'shadow-none' : 'shadow-2xl'} min-h-screen transition-all duration-300`}>
+        <div className={`${getLayoutWidth()} mx-auto ${layoutMode === 'full' ? 'px-0' : 'px-4 sm:px-6'} py-12 pb-32 transition-none`}>
+          <div className={`${themeColors.paper} ${themeColors.text} ${layoutMode === 'full' ? 'shadow-none' : 'shadow-2xl'} min-h-screen transition-colors duration-300`}>
             <div className="px-8 py-12">
               {renderReader()}
             </div>
@@ -749,9 +788,9 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         </div>
       </div>
 
-      {/* 常驻浮动控制栏 - 右下角 */}
-      {!zenMode && (
-        <div className={`fixed bottom-6 right-6 z-50 ${themeColors.controlBg} backdrop-blur-xl rounded-2xl shadow-2xl border ${themeColors.border} p-3`}>
+      {/* 常驻浮动控制栏 - 右下角 - 只在主控制栏隐藏时显示 */}
+      {!zenMode && !showControls && (
+        <div className={`fixed bottom-6 right-6 z-50 ${themeColors.controlBg} backdrop-blur-xl rounded-2xl shadow-2xl border ${themeColors.border} p-3 transition-all duration-300`}>
           <div className="flex flex-col gap-2">
             {/* 翻页控制 */}
             <div className="flex gap-2">
@@ -794,17 +833,15 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         </div>
       )}
 
-      {/* Zen 模式退出提示 */}
+      {/* Zen 模式退出提示 - 右上角低调显示 */}
       {zenMode && (
-        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[60]">
-          <button
-            onClick={() => setZenMode(false)}
-            className="px-6 py-3 bg-black/70 hover:bg-black/90 backdrop-blur-xl text-white rounded-full shadow-2xl transition-all flex items-center gap-3 group"
-          >
-            <span className="text-sm font-medium">🧘 Zen 模式</span>
-            <span className="text-xs opacity-60 group-hover:opacity-100">按 Z 或点击退出</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setZenMode(false)}
+          className="fixed top-4 right-4 z-[60] px-3 py-1.5 bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white/60 hover:text-white/90 rounded-lg text-xs transition-all"
+          title="退出 Zen 模式 (Z)"
+        >
+          退出
+        </button>
       )}
 
       {/* 设置面板 */}
