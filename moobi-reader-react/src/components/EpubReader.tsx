@@ -17,74 +17,111 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
 
   // 加载EPUB文件
   useEffect(() => {
+    let mounted = true;
+    let blobUrl: string | null = null;
+
     const loadEpub = async () => {
       try {
+        if (!mounted) return;
+
         setLoading(true);
         setError(null);
 
-        // 将文件转换为Blob URL
-        const blob = new Blob([await file.arrayBuffer()], { type: 'application/epub+zip' });
-        const blobUrl = URL.createObjectURL(blob);
+        console.log('Loading EPUB file:', file.name);
 
-        // 创建EPUB book实例
-        const epubBook = ePub(blobUrl);
+        // 将文件转换为ArrayBuffer
+        const arrayBuffer = await file.arrayBuffer();
+        console.log('ArrayBuffer loaded, size:', arrayBuffer.byteLength);
+
+        // 创建EPUB book实例（直接使用ArrayBuffer）
+        const epubBook = ePub(arrayBuffer);
+
+        console.log('EPUB book instance created');
 
         // 等待book加载完成
         await epubBook.ready;
+        console.log('EPUB book ready');
 
-        // 创建rendition
-        if (viewerRef.current) {
-          const rend = epubBook.renderTo(viewerRef.current, {
-            width: '100%',
-            height: '100%',
-            spread: 'none',
-          });
-
-          setRendition(rend);
-
-          // 应用主题
-          if (theme === 'dark') {
-            rend.themes.override('background', '#111827');
-            rend.themes.override('color', '#f9fafb');
-          } else {
-            rend.themes.override('background', '#ffffff');
-            rend.themes.override('color', '#111827');
-          }
-
-          // 设置字体大小
-          rend.themes.fontSize(`${fontSize}px`);
-
-          // 显示第一页
-          await rend.display();
-
-          setLoading(false);
-
-          // 监听位置变化
-          rend.on('relocated', (location: any) => {
-            // 计算进度
-            const progress = epubBook.locations.percentageFromCfi(location.start.cfi);
-            if (onProgressChange && progress) {
-              onProgressChange(Math.round(progress * 100));
-            }
-          });
+        if (!mounted || !viewerRef.current) {
+          console.log('Component unmounted or ref not ready');
+          return;
         }
 
-        // 生成位置信息（用于进度计算）
-        await epubBook.locations.generate(1600);
+        // 创建rendition
+        const rend = epubBook.renderTo(viewerRef.current, {
+          width: '100%',
+          height: '100%',
+          spread: 'none',
+        });
 
-      } catch (err) {
-        console.error('Error loading EPUB:', err);
-        setError('加载EPUB文件失败');
+        console.log('Rendition created');
+
+        // 应用主题
+        if (theme === 'dark') {
+          rend.themes.override('background', '#111827');
+          rend.themes.override('color', '#f9fafb');
+        } else {
+          rend.themes.override('background', '#ffffff');
+          rend.themes.override('color', '#111827');
+        }
+
+        // 设置字体大小
+        rend.themes.fontSize(`${fontSize}px`);
+
+        // 显示第一页
+        await rend.display();
+        console.log('First page displayed');
+
+        if (!mounted) return;
+
+        setRendition(rend);
         setLoading(false);
+
+        // 监听位置变化
+        rend.on('relocated', (location: any) => {
+          if (!location || !location.start) return;
+
+          // 计算进度
+          try {
+            const progress = epubBook.locations.percentageFromCfi(location.start.cfi);
+            if (onProgressChange && progress !== undefined && progress !== null) {
+              onProgressChange(Math.round(progress * 100));
+            }
+          } catch (err) {
+            console.warn('Error calculating progress:', err);
+          }
+        });
+
+        // 生成位置信息（用于进度计算）- 在后台异步执行
+        epubBook.locations.generate(1600).then(() => {
+          console.log('Locations generated');
+        }).catch((err: any) => {
+          console.warn('Error generating locations:', err);
+        });
+
+      } catch (err: any) {
+        console.error('Error loading EPUB:', err);
+        if (mounted) {
+          setError(`加载EPUB文件失败: ${err.message || '未知错误'}`);
+          setLoading(false);
+        }
       }
     };
 
     loadEpub();
 
     return () => {
+      mounted = false;
       // 清理
       if (rendition) {
-        rendition.destroy();
+        try {
+          rendition.destroy();
+        } catch (err) {
+          console.warn('Error destroying rendition:', err);
+        }
+      }
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
       }
     };
   }, [file]);
