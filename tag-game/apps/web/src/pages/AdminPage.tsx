@@ -10,7 +10,6 @@ import {
   Stack,
   Tabs,
   Tab,
-  Grid,
   IconButton,
   Snackbar,
   Alert,
@@ -198,26 +197,34 @@ export default function AdminPage() {
                 </CardContent>
               </Card>
             ) : (
-              <Grid container spacing={2}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: 'repeat(2, 1fr)',
+                    md: 'repeat(3, 1fr)',
+                  },
+                  gap: 2,
+                }}
+              >
                 {items.map(item => (
-                  <Grid item xs={12} sm={6} md={4} key={item.id}>
-                    <Card>
-                      <CardContent>
-                        <Box sx={{ textAlign: 'center' }}>
-                          <img src={item.qrCode} alt={item.name} style={{ width: '100%', maxWidth: 200 }} />
-                          <Typography variant="h6" mt={2}>{item.name}</Typography>
-                          <Typography variant="body2" color="text.secondary">{item.description}</Typography>
-                          <Stack direction="row" spacing={1} justifyContent="center" mt={1}>
-                            <Chip label={item.type} size="small" />
-                            <Chip label={`${item.durationSec}秒`} size="small" />
-                            <Chip label={item.isUsed ? '已使用' : '未使用'} size="small" color={item.isUsed ? 'default' : 'success'} />
-                          </Stack>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
+                  <Card key={item.id}>
+                    <CardContent>
+                      <Box sx={{ textAlign: 'center' }}>
+                        <img src={item.qrCode} alt={item.name} style={{ width: '100%', maxWidth: 200 }} />
+                        <Typography variant="h6" mt={2}>{item.name}</Typography>
+                        <Typography variant="body2" color="text.secondary">{item.description}</Typography>
+                        <Stack direction="row" spacing={1} justifyContent="center" mt={1}>
+                          <Chip label={item.type} size="small" />
+                          <Chip label={`${item.durationSec}秒`} size="small" />
+                          <Chip label={item.isUsed ? '已使用' : '未使用'} size="small" color={item.isUsed ? 'default' : 'success'} />
+                        </Stack>
+                      </Box>
+                    </CardContent>
+                  </Card>
                 ))}
-              </Grid>
+              </Box>
             )}
           </Stack>
         )}
@@ -238,15 +245,21 @@ export default function AdminPage() {
               pendingCaptures.map(capture => (
                 <Card key={capture.id}>
                   <CardContent>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} md={4}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: { xs: 'column', md: 'row' },
+                        gap: 2,
+                      }}
+                    >
+                      <Box sx={{ flex: { xs: '1', md: '0 0 33.333%' } }}>
                         <img
                           src={capture.photoUrl}
                           alt="Capture"
                           style={{ width: '100%', borderRadius: 8 }}
                         />
-                      </Grid>
-                      <Grid item xs={12} md={8}>
+                      </Box>
+                      <Box sx={{ flex: 1 }}>
                         <Stack spacing={2}>
                           <Box>
                             <Typography variant="h6">捕捉记录</Typography>
@@ -281,8 +294,8 @@ export default function AdminPage() {
                             </Button>
                           </Stack>
                         </Stack>
-                      </Grid>
-                    </Grid>
+                      </Box>
+                    </Box>
                   </CardContent>
                 </Card>
               ))
