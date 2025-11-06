@@ -9,7 +9,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface PdfReaderProps {
   file: File;
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | 'sepia' | 'green' | 'blue';
   zoom?: number; // 缩放百分比 (50-200)
   onPageChange?: (current: number, total: number) => void;
   onProgressChange?: (progress: number) => void;

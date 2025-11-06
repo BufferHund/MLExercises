@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, ChevronLeft, ChevronRight, Settings, Moon, Sun, Bookmark, ZoomIn, ZoomOut, Search, Highlighter } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Settings, Bookmark, ZoomIn, ZoomOut, Search, Highlighter } from 'lucide-react';
 import PdfReader from './PdfReader';
 import EpubReader from './EpubReader';
 import TextReader from './TextReader';
@@ -46,7 +46,7 @@ interface HighlightData {
 export default function ImmersiveReader({ file, fileName, fileType, onClose }: ImmersiveReaderProps) {
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [theme, setTheme] = useState<'light' | 'dark' | 'sepia' | 'green' | 'blue'>('dark');
   const [fontSize, setFontSize] = useState(18);
   const [progress, setProgress] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -55,6 +55,9 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
   const [showSettings, setShowSettings] = useState(false);
   const [bookmarks, setBookmarks] = useState<BookmarkData[]>([]);
   const [showBookmarks, setShowBookmarks] = useState(false);
+  const [zenMode, setZenMode] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<'elegant' | 'a4' | 'full'>('elegant');
+  const [pageMode, setPageMode] = useState<'single' | 'double'>('single');
 
   // 新增功能状态
   const [showBookmarkDialog, setShowBookmarkDialog] = useState(false);
@@ -295,6 +298,12 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
             console.log('⌨️ Keyboard: Toggle fullscreen (F)');
           }
           break;
+        case 'z':
+        case 'Z':
+          e.preventDefault();
+          setZenMode(!zenMode);
+          console.log('⌨️ Keyboard: Toggle Zen mode');
+          break;
         case 'Escape':
           if (showSearch) {
             setShowSearch(false);
@@ -413,6 +422,40 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     setProgress(calculatedProgress);
   };
 
+  // 获取主题颜色
+  const getThemeColors = () => {
+    switch (theme) {
+      case 'light':
+        return { bg: 'bg-gray-50', text: 'text-gray-900', border: 'border-gray-900/10', controlBg: 'bg-gray-50/95', hover: 'hover:bg-gray-900/10' };
+      case 'dark':
+        return { bg: 'bg-gray-900', text: 'text-white', border: 'border-white/10', controlBg: 'bg-gray-900/95', hover: 'hover:bg-white/10' };
+      case 'sepia':
+        return { bg: 'bg-[#f4ecd8]', text: 'text-[#5c4a2f]', border: 'border-[#5c4a2f]/10', controlBg: 'bg-[#f4ecd8]/95', hover: 'hover:bg-[#5c4a2f]/10' };
+      case 'green':
+        return { bg: 'bg-[#cce8cc]', text: 'text-[#2d4a2d]', border: 'border-[#2d4a2d]/10', controlBg: 'bg-[#cce8cc]/95', hover: 'hover:bg-[#2d4a2d]/10' };
+      case 'blue':
+        return { bg: 'bg-[#e0f2ff]', text: 'text-[#1e3a5f]', border: 'border-[#1e3a5f]/10', controlBg: 'bg-[#e0f2ff]/95', hover: 'hover:bg-[#1e3a5f]/10' };
+      default:
+        return { bg: 'bg-gray-900', text: 'text-white', border: 'border-white/10', controlBg: 'bg-gray-900/95', hover: 'hover:bg-white/10' };
+    }
+  };
+
+  // 获取布局宽度
+  const getLayoutWidth = () => {
+    switch (layoutMode) {
+      case 'elegant':
+        return 'max-w-5xl'; // 优雅居中模式
+      case 'a4':
+        return 'max-w-[210mm]'; // A4纸张模式
+      case 'full':
+        return 'max-w-full'; // 全宽模式
+      default:
+        return 'max-w-5xl';
+    }
+  };
+
+  const themeColors = getThemeColors();
+
   const renderReader = () => {
     switch (fileType.toLowerCase()) {
       case 'pdf':
@@ -465,31 +508,31 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex flex-col ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`}
+      className={`fixed inset-0 z-50 flex flex-col ${themeColors.bg} transition-colors duration-300`}
       onMouseMove={handleMouseMove}
     >
       {/* 顶部控制栏 */}
       <div
         className={`flex-shrink-0 transition-all duration-300 ${
-          showControls ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+          zenMode ? 'hidden' : (showControls ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0')
         }`}
       >
-        <div className={`${theme === 'dark' ? 'bg-gray-900/95 backdrop-blur-xl' : 'bg-gray-50/95 backdrop-blur-xl'} border-b ${theme === 'dark' ? 'border-white/10' : 'border-gray-900/10'}`}>
+        <div className={`${themeColors.controlBg} backdrop-blur-xl border-b ${themeColors.border}`}>
           <div className="flex items-center justify-between px-6 py-4">
             {/* 左侧 */}
             <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
-                className={`p-2 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors`}
+                className={`p-2 ${themeColors.hover} rounded-xl transition-colors`}
                 title="关闭阅读器 (ESC)"
               >
-                <X className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} />
+                <X className={`w-5 h-5 ${themeColors.text}`} />
               </button>
               <div className="min-w-0">
-                <h3 className={`font-semibold text-sm truncate max-w-[300px] ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                <h3 className={`font-semibold text-sm truncate max-w-[300px] ${themeColors.text}`}>
                   {fileName}
                 </h3>
-                <p className={`text-xs ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`}>
+                <p className={`text-xs ${themeColors.text} opacity-60`}>
                   {fileType.toUpperCase()} 格式
                   {fileType === 'pdf' && totalPages > 0 && ` · 第 ${currentPage}/${totalPages} 页`}
                 </p>
@@ -499,19 +542,15 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
             {/* 右侧控制 */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className={`p-2 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors`}
-                title={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
+                onClick={() => setShowSettings(true)}
+                className={`p-2 ${themeColors.hover} rounded-xl transition-colors`}
+                title="打开设置"
               >
-                {theme === 'dark' ? (
-                  <Sun className="w-5 h-5 text-white" />
-                ) : (
-                  <Moon className="w-5 h-5 text-gray-900" />
-                )}
+                <Settings className={`w-5 h-5 ${themeColors.text}`} />
               </button>
               <button
                 onClick={toggleFullscreen}
-                className={`px-4 py-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-gray-900/10 hover:bg-gray-900/20 text-gray-900'} rounded-xl text-sm font-medium transition-colors`}
+                className={`px-4 py-2 ${themeColors.hover} ${themeColors.text} rounded-xl text-sm font-medium transition-colors`}
                 title="全屏阅读 (F)"
               >
                 {isFullscreen ? '退出全屏' : '全屏阅读'}
@@ -523,7 +562,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
       {/* 主阅读区域 */}
       <div ref={readerContainerRef} className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-8 py-12">
+        <div className={`${getLayoutWidth()} mx-auto px-8 py-12 pb-48`}>
           {renderReader()}
         </div>
       </div>
@@ -531,10 +570,10 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       {/* 底部控制栏 */}
       <div
         className={`flex-shrink-0 transition-all duration-300 ${
-          showControls ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+          zenMode ? 'hidden' : (showControls ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0')
         }`}
       >
-        <div className={`${theme === 'dark' ? 'bg-gray-900/95 backdrop-blur-xl' : 'bg-gray-50/95 backdrop-blur-xl'} border-t ${theme === 'dark' ? 'border-white/10' : 'border-gray-900/10'}`}>
+        <div className={`${themeColors.controlBg} backdrop-blur-xl border-t ${themeColors.border}`}>
           {/* 进度条 */}
           <div className="px-6 pt-4">
             <div className="flex items-center gap-4">
@@ -675,33 +714,153 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
             </h3>
 
             <div className="space-y-6">
-              {/* 主题设置 */}
+              {/* 主题颜色 */}
               <div>
                 <label className={`text-sm font-medium mb-2 block ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
-                  主题
+                  阅读主题
                 </label>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => setTheme('light')}
-                    className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${
+                    className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${
                       theme === 'light'
-                        ? 'bg-gray-900 text-white'
-                        : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                    }`}
-                  >
-                    浅色
-                  </button>
-                  <button
-                    onClick={() => setTheme('dark')}
-                    className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${
-                      theme === 'dark'
-                        ? 'bg-white text-gray-900'
+                        ? 'bg-gray-900 text-white ring-2 ring-primary'
                         : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                     }`}
                   >
-                    深色
+                    ☀️ 浅色
+                  </button>
+                  <button
+                    onClick={() => setTheme('dark')}
+                    className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${
+                      theme === 'dark'
+                        ? 'bg-gray-900 text-white ring-2 ring-primary'
+                        : 'bg-gray-800 text-white hover:bg-gray-700'
+                    }`}
+                  >
+                    🌙 深色
+                  </button>
+                  <button
+                    onClick={() => setTheme('sepia')}
+                    className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${
+                      theme === 'sepia'
+                        ? 'bg-[#f4ecd8] text-[#5c4a2f] ring-2 ring-primary'
+                        : 'bg-[#f4ecd8] text-[#5c4a2f] hover:bg-[#ebe2ca]'
+                    }`}
+                  >
+                    📖 米色
+                  </button>
+                  <button
+                    onClick={() => setTheme('green')}
+                    className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${
+                      theme === 'green'
+                        ? 'bg-[#cce8cc] text-[#2d4a2d] ring-2 ring-primary'
+                        : 'bg-[#cce8cc] text-[#2d4a2d] hover:bg-[#b8deb8]'
+                    }`}
+                  >
+                    🌿 绿色
+                  </button>
+                  <button
+                    onClick={() => setTheme('blue')}
+                    className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${
+                      theme === 'blue'
+                        ? 'bg-[#e0f2ff] text-[#1e3a5f] ring-2 ring-primary'
+                        : 'bg-[#e0f2ff] text-[#1e3a5f] hover:bg-[#d0e8f7]'
+                    }`}
+                  >
+                    💙 蓝色
                   </button>
                 </div>
+              </div>
+
+              {/* 布局模式 */}
+              <div>
+                <label className={`text-sm font-medium mb-2 block ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
+                  布局模式
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setLayoutMode('elegant')}
+                    className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
+                      layoutMode === 'elegant'
+                        ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                        : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                    }`}
+                  >
+                    📚 优雅
+                  </button>
+                  <button
+                    onClick={() => setLayoutMode('a4')}
+                    className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
+                      layoutMode === 'a4'
+                        ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                        : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                    }`}
+                  >
+                    📄 A4
+                  </button>
+                  <button
+                    onClick={() => setLayoutMode('full')}
+                    className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
+                      layoutMode === 'full'
+                        ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                        : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                    }`}
+                  >
+                    🖥️ 全屏
+                  </button>
+                </div>
+              </div>
+
+              {/* 页面模式 (PDF) */}
+              {fileType === 'pdf' && (
+                <div>
+                  <label className={`text-sm font-medium mb-2 block ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
+                    页面模式
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setPageMode('single')}
+                      className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
+                        pageMode === 'single'
+                          ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                          : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                      }`}
+                    >
+                      📄 单页
+                    </button>
+                    <button
+                      onClick={() => setPageMode('double')}
+                      className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
+                        pageMode === 'double'
+                          ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                          : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                      }`}
+                    >
+                      📖 双页
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Zen模式 */}
+              <div>
+                <label className={`text-sm font-medium mb-2 block ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
+                  Zen 模式
+                </label>
+                <button
+                  onClick={() => setZenMode(!zenMode)}
+                  className={`w-full py-3 px-4 rounded-xl font-medium transition-all ${
+                    zenMode
+                      ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                      : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                  }`}
+                >
+                  {zenMode ? '🧘 已启用 Zen 模式' : '🧘 启用 Zen 模式 (Z)'}
+                </button>
+                <p className={`text-xs mt-2 ${theme === 'dark' ? 'text-white/40' : 'text-gray-400'}`}>
+                  隐藏所有控制栏，专注阅读
+                </p>
               </div>
 
               {/* 字体大小 (EPUB/TXT) */}
@@ -748,9 +907,8 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                 <div className={`text-xs space-y-1 ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
                   <p>← / PageUp: 上一页</p>
                   <p>→ / PageDown / 空格: 下一页</p>
-                  <p>Home: 第一页</p>
-                  <p>End: 最后一页</p>
-                  <p>F: 全屏切换</p>
+                  <p>Home: 第一页 | End: 最后一页</p>
+                  <p>F: 全屏切换 | Z: Zen 模式</p>
                   <p>Ctrl+F: 搜索</p>
                   <p>ESC: 退出全屏/关闭面板</p>
                   <p>滑动: 左右滑动翻页</p>

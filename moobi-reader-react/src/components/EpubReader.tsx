@@ -5,7 +5,7 @@ import type { Rendition } from 'epubjs';
 interface EpubReaderProps {
   file: File;
   fontSize: number;
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | 'sepia' | 'green' | 'blue';
   onProgressChange?: (progress: number) => void;
 }
 
