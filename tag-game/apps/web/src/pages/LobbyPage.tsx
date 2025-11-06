@@ -1,7 +1,34 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Container,
+  Card,
+  CardContent,
+  Button,
+  Typography,
+  Stack,
+  Chip,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Avatar,
+  CircularProgress,
+  Alert,
+  Divider,
+  Paper,
+} from '@mui/material';
+import {
+  PlayArrow as PlayIcon,
+  Shuffle as ShuffleIcon,
+  QrCode as QrCodeIcon,
+  AdminPanelSettings as AdminIcon,
+  Person as PersonIcon,
+} from '@mui/icons-material';
 import { games, users } from '../api/client';
 import { useGameStore } from '../store/gameStore';
+import { hunterColor, runnerColor } from '../theme';
 import type { Game } from '../types';
 
 export default function LobbyPage() {
@@ -53,17 +80,32 @@ export default function LobbyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">加载中...</div>
-      </div>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress size={48} />
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-red-600">{error}</div>
-      </div>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 2,
+        }}
+      >
+        <Alert severity="error">{error}</Alert>
+      </Box>
     );
   }
 
@@ -71,115 +113,205 @@ export default function LobbyPage() {
   const isHunter = myParticipation?.team === 'HUNTER';
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <div className="max-w-2xl mx-auto space-y-4">
-        {/* 游戏信息 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h1 className="text-2xl font-bold mb-2">{game?.name}</h1>
-          <p className="text-gray-600">游戏 ID: {gameId}</p>
-          <p className="text-sm text-gray-500 mt-2">
-            状态: {game?.status === 'LOBBY' ? '等待中' : '进行中'}
-          </p>
-        </div>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 3 }}>
+      <Container maxWidth="md">
+        <Stack spacing={3}>
+          {/* 游戏信息卡片 */}
+          <Card elevation={2}>
+            <CardContent>
+              <Stack spacing={2}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Typography variant="h4" fontWeight="bold">
+                    {game?.name}
+                  </Typography>
+                  <Chip
+                    label={game?.status === 'LOBBY' ? '等待中' : '进行中'}
+                    color={game?.status === 'LOBBY' ? 'default' : 'success'}
+                  />
+                </Box>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    游戏代码
+                  </Typography>
+                  <Typography
+                    variant="h5"
+                    fontFamily="monospace"
+                    fontWeight="bold"
+                    color="primary"
+                  >
+                    {gameId}
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
 
-        {/* 玩家徽章二维码 */}
-        {badge && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">你的玩家徽章</h2>
-            <div className="flex flex-col items-center">
-              <img
-                src={badge.qrDataUrl}
-                alt="Player Badge QR"
-                className="w-48 h-48 border-2 border-gray-300 rounded"
-              />
-              <p className="mt-2 text-sm text-gray-600">
-                佩戴此二维码参与游戏
-              </p>
-              <p className="text-xs text-gray-400 mt-1">{badge.badgeCode}</p>
-            </div>
-          </div>
-        )}
+          {/* 玩家徽章二维码 */}
+          {badge && (
+            <Card elevation={2}>
+              <CardContent>
+                <Typography variant="h6" fontWeight="medium" gutterBottom>
+                  <QrCodeIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  你的玩家徽章
+                </Typography>
+                <Stack alignItems="center" spacing={2} mt={2}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      bgcolor: 'background.default',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <img
+                      src={badge.qrDataUrl}
+                      alt="Player Badge QR"
+                      style={{ width: 200, height: 200, display: 'block' }}
+                    />
+                  </Paper>
+                  <Typography variant="body2" color="text.secondary">
+                    佩戴此二维码参与游戏
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    fontFamily="monospace"
+                    color="text.secondary"
+                  >
+                    {badge.badgeCode}
+                  </Typography>
+                </Stack>
+              </CardContent>
+            </Card>
+          )}
 
-        {/* 阵营信息 */}
-        {myParticipation && (
-          <div
-            className={`rounded-lg shadow p-6 text-white ${
-              isHunter ? 'bg-hunter' : 'bg-runner'
-            }`}
-          >
-            <h2 className="text-xl font-bold">
-              {isHunter ? '🎯 你是猎人' : '🏃 你是逃亡者'}
-            </h2>
-            <p className="mt-2">
-              {isHunter
-                ? '目标：抓捕所有逃亡者'
-                : '目标：躲避猎人，坚持到最后'}
-            </p>
-          </div>
-        )}
-
-        {/* 玩家列表 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">
-            玩家列表 ({game?.participations?.length || 0})
-          </h2>
-          <div className="space-y-2">
-            {game?.participations?.map((p) => (
-              <div
-                key={p.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded"
-              >
-                <span className="font-medium">{p.user?.nickname}</span>
-                <span
-                  className={`px-3 py-1 rounded text-sm ${
-                    p.team === 'HUNTER'
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-blue-100 text-blue-700'
-                  }`}
-                >
-                  {p.team === 'HUNTER' ? '猎人' : '逃亡者'}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 主持人操作 */}
-        {game?.status === 'LOBBY' && (
-          <div className="bg-white rounded-lg shadow p-6 space-y-3">
-            <h2 className="text-lg font-semibold mb-4">主持人操作</h2>
-            <button
-              onClick={handleAssignTeams}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition"
+          {/* 阵营信息 */}
+          {myParticipation && (
+            <Card
+              elevation={2}
+              sx={{
+                bgcolor: isHunter ? hunterColor : runnerColor,
+                color: 'white',
+              }}
             >
-              分配阵营
-            </button>
-            <button
-              onClick={handleStart}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition"
-            >
-              开始游戏
-            </button>
-            {user?.isAdmin && (
-              <button
-                onClick={() => navigate(`/admin/${gameId}`)}
-                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 rounded-lg transition"
-              >
-                🛠️ 管理员面板
-              </button>
-            )}
-          </div>
-        )}
+              <CardContent>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  {isHunter ? '🎯 你是猎人' : '🏃 你是逃亡者'}
+                </Typography>
+                <Typography variant="body1">
+                  {isHunter
+                    ? '目标：抓捕所有逃亡者'
+                    : '目标：躲避猎人，坚持到最后'}
+                </Typography>
+              </CardContent>
+            </Card>
+          )}
 
-        {game?.status === 'RUNNING' && (
-          <button
-            onClick={() => navigate(`/play/${gameId}`)}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition shadow-lg"
-          >
-            进入游戏
-          </button>
-        )}
-      </div>
-    </div>
+          {/* 玩家列表 */}
+          <Card elevation={2}>
+            <CardContent>
+              <Typography variant="h6" fontWeight="medium" gutterBottom>
+                玩家列表 ({game?.participations?.length || 0})
+              </Typography>
+              <Divider sx={{ my: 2 }} />
+              <List>
+                {game?.participations?.map((p, index) => (
+                  <ListItem
+                    key={p.id}
+                    sx={{
+                      borderRadius: 2,
+                      mb: 1,
+                      bgcolor: 'background.default',
+                    }}
+                  >
+                    <ListItemAvatar>
+                      <Avatar
+                        sx={{
+                          bgcolor: p.team === 'HUNTER' ? hunterColor : runnerColor,
+                        }}
+                      >
+                        <PersonIcon />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={p.user?.nickname}
+                      secondary={`#${index + 1}`}
+                    />
+                    <Chip
+                      label={p.team === 'HUNTER' ? '猎人' : '逃亡者'}
+                      size="small"
+                      sx={{
+                        bgcolor: p.team === 'HUNTER' ? hunterColor : runnerColor,
+                        color: 'white',
+                      }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
+
+          {/* 主持人操作 */}
+          {game?.status === 'LOBBY' && (
+            <Card elevation={2}>
+              <CardContent>
+                <Typography variant="h6" fontWeight="medium" gutterBottom>
+                  主持人操作
+                </Typography>
+                <Stack spacing={2} mt={2}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    fullWidth
+                    startIcon={<ShuffleIcon />}
+                    onClick={handleAssignTeams}
+                    sx={{ py: 1.5 }}
+                  >
+                    分配阵营
+                  </Button>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    fullWidth
+                    color="success"
+                    startIcon={<PlayIcon />}
+                    onClick={handleStart}
+                    sx={{ py: 1.5 }}
+                  >
+                    开始游戏
+                  </Button>
+                  {user?.isAdmin && (
+                    <Button
+                      variant="contained"
+                      size="large"
+                      fullWidth
+                      color="warning"
+                      startIcon={<AdminIcon />}
+                      onClick={() => navigate(`/admin/${gameId}`)}
+                      sx={{ py: 1.5 }}
+                    >
+                      管理员面板
+                    </Button>
+                  )}
+                </Stack>
+              </CardContent>
+            </Card>
+          )}
+
+          {game?.status === 'RUNNING' && (
+            <Button
+              variant="contained"
+              size="large"
+              fullWidth
+              color="primary"
+              startIcon={<PlayIcon />}
+              onClick={() => navigate(`/play/${gameId}`)}
+              sx={{ py: 2, fontSize: '1.1rem', fontWeight: 'bold' }}
+            >
+              进入游戏
+            </Button>
+          )}
+        </Stack>
+      </Container>
+    </Box>
   );
 }
