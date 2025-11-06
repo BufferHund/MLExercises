@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
 import ePub from 'epubjs';
 import type { Rendition } from 'epubjs';
 
@@ -13,68 +13,80 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
   const viewerRef = useRef<HTMLDivElement>(null);
   const bookRef = useRef<any>(null);
   const renditionRef = useRef<Rendition | null>(null);
-  const loadingRef = useRef(false); // 防止React Strict Mode双重加载
-  const fileNameRef = useRef<string>('');
+  const effectIdRef = useRef(0); // Track effect invocations
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewerReady, setViewerReady] = useState(false);
+  const [viewerMounted, setViewerMounted] = useState(false);
 
-  // 第一步：等待viewer div渲染
-  useEffect(() => {
-    // 使用setTimeout确保DOM已经渲染
-    const timer = setTimeout(() => {
-      if (viewerRef.current) {
-        console.log('✅ EPUB viewer div is ready');
-        setViewerReady(true);
-      }
-    }, 0);
+  // 第一步：使用useLayoutEffect检测viewer div已经mounted
+  useLayoutEffect(() => {
+    const layoutId = ++effectIdRef.current;
+    console.log(`🟢 [EPUB Layout #${layoutId}] ========== LAYOUT EFFECT ==========`);
+    console.log(`🟢 [EPUB Layout #${layoutId}] viewerRef.current:`, viewerRef.current);
 
-    return () => clearTimeout(timer);
+    if (viewerRef.current) {
+      console.log(`✅ [EPUB Layout #${layoutId}] Viewer div is mounted in DOM`);
+      setViewerMounted(true);
+    } else {
+      console.log(`⚠️ [EPUB Layout #${layoutId}] Viewer div NOT in DOM yet`);
+    }
+
+    return () => {
+      console.log(`🧹 [EPUB Layout #${layoutId}] Layout cleanup`);
+    };
   }, []);
 
-  // 第二步：加载EPUB文件 - 只在viewer准备好后执行
+  // 第二步：加载EPUB文件 - 只在viewer mounted后执行
   useEffect(() => {
-    if (!viewerReady) {
-      console.log('⏳ Waiting for EPUB viewer to be ready...');
+    if (!viewerMounted) {
+      console.log('⏸️ [EPUB Load] Waiting for viewer to mount...');
       return;
     }
 
-    // 防止Strict Mode导致的双重加载
-    if (loadingRef.current && fileNameRef.current === file.name) {
-      console.log('⏭️ Skipping duplicate EPUB load (Strict Mode)');
-      return;
-    }
-
-    loadingRef.current = true;
-    fileNameRef.current = file.name;
+    const effectId = effectIdRef.current + 1000; // Different ID range for load effects
+    const startTime = Date.now();
     let mounted = true;
+
+    console.log(`🔵 [EPUB Effect #${effectId}] ========== LOAD EFFECT START ==========`);
+    console.log(`🔵 [EPUB Effect #${effectId}] Timestamp: ${new Date().toISOString()}`);
+    console.log(`🔵 [EPUB Effect #${effectId}] File: ${file.name}`);
+    console.log(`🔵 [EPUB Effect #${effectId}] File size: ${file.size} bytes (${(file.size/1024/1024).toFixed(2)} MB)`);
+    console.log(`🔵 [EPUB Effect #${effectId}] viewerRef.current:`, viewerRef.current);
 
     const loadEpub = async () => {
       try {
-        console.log('📚 Loading EPUB file:', file.name);
+        console.log(`📚 [EPUB Effect #${effectId}] Starting file.arrayBuffer()...`);
         setLoading(true);
         setError(null);
 
-        // 将文件转换为ArrayBuffer
         const arrayBuffer = await file.arrayBuffer();
-        console.log('✅ EPUB ArrayBuffer loaded, size:', arrayBuffer.byteLength);
+        const arrayBufferTime = Date.now() - startTime;
+        console.log(`✅ [EPUB Effect #${effectId}] ArrayBuffer loaded in ${arrayBufferTime}ms`);
 
-        // 创建EPUB book实例（直接使用ArrayBuffer）
-        const epubBook = ePub(arrayBuffer);
-        bookRef.current = epubBook;
-
-        console.log('✅ EPUB book instance created');
-
-        // 等待book加载完成
-        await epubBook.ready;
-        console.log('✅ EPUB book ready');
-
-        if (!mounted || !viewerRef.current) {
-          console.log('⚠️ Component unmounted or viewer not ready');
+        if (!mounted) {
+          console.log(`⚠️ [EPUB Effect #${effectId}] Component unmounted after arrayBuffer, ABORTING`);
           return;
         }
 
-        // 创建rendition
+        console.log(`📚 [EPUB Effect #${effectId}] Creating EPUB book instance...`);
+        const epubBook = ePub(arrayBuffer);
+        bookRef.current = epubBook;
+
+        console.log(`📚 [EPUB Effect #${effectId}] Waiting for book.ready...`);
+        await epubBook.ready;
+        const bookReadyTime = Date.now() - startTime;
+        console.log(`✅ [EPUB Effect #${effectId}] EPUB book ready in ${bookReadyTime}ms`);
+
+        if (!mounted) {
+          console.log(`⚠️ [EPUB Effect #${effectId}] Component unmounted after book ready, ABORTING`);
+          return;
+        }
+
+        if (!viewerRef.current) {
+          throw new Error(`Viewer element is null even though viewerMounted=${viewerMounted}`);
+        }
+
+        console.log(`📚 [EPUB Effect #${effectId}] Creating rendition with viewer element...`);
         const rend = epubBook.renderTo(viewerRef.current, {
           width: '100%',
           height: '600px',
@@ -82,9 +94,10 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
         });
 
         renditionRef.current = rend;
-        console.log('✅ Rendition created');
+        console.log(`✅ [EPUB Effect #${effectId}] Rendition created`);
 
         // 应用初始主题
+        console.log(`🎨 [EPUB Effect #${effectId}] Applying theme: ${theme}`);
         if (theme === 'dark') {
           rend.themes.override('background', '#111827');
           rend.themes.override('color', '#f9fafb');
@@ -94,13 +107,19 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
         }
 
         // 设置初始字体大小
+        console.log(`📝 [EPUB Effect #${effectId}] Setting font size: ${fontSize}px`);
         rend.themes.fontSize(`${fontSize}px`);
 
         // 显示第一页
+        console.log(`📚 [EPUB Effect #${effectId}] Displaying first page...`);
         await rend.display();
-        console.log('✅ First page displayed');
+        const displayTime = Date.now() - startTime;
+        console.log(`✅ [EPUB Effect #${effectId}] First page displayed in ${displayTime}ms`);
 
-        if (!mounted) return;
+        if (!mounted) {
+          console.log(`⚠️ [EPUB Effect #${effectId}] Component unmounted after display, ABORTING`);
+          return;
+        }
 
         setLoading(false);
 
@@ -114,21 +133,22 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
               onProgressChange(Math.round(progress * 100));
             }
           } catch (err) {
-            console.warn('⚠️ Error calculating progress:', err);
+            console.warn(`⚠️ [EPUB Effect #${effectId}] Error calculating progress:`, err);
           }
         });
 
         // 生成位置信息（在后台异步执行）
         epubBook.locations.generate(1600).then(() => {
-          console.log('✅ Locations generated');
+          console.log(`✅ [EPUB Effect #${effectId}] Locations generated`);
         }).catch((err: any) => {
-          console.warn('⚠️ Error generating locations:', err);
+          console.warn(`⚠️ [EPUB Effect #${effectId}] Error generating locations:`, err);
         });
 
-        console.log('✅ EPUB ready for reading');
+        console.log(`✅ [EPUB Effect #${effectId}] EPUB ready for reading`);
 
       } catch (err: any) {
-        console.error('❌ Error loading EPUB:', err);
+        const errorTime = Date.now() - startTime;
+        console.error(`❌ [EPUB Effect #${effectId}] Error after ${errorTime}ms:`, err);
         if (mounted) {
           setError(`加载EPUB文件失败: ${err.message || '未知错误'}`);
           setLoading(false);
@@ -140,24 +160,27 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
 
     return () => {
       mounted = false;
-      console.log('🧹 EPUB loader cleanup');
+      const cleanupTime = Date.now() - startTime;
+      console.log(`🧹 [EPUB Effect #${effectId}] ========== CLEANUP CALLED ==========`);
+      console.log(`🧹 [EPUB Effect #${effectId}] Cleanup after ${cleanupTime}ms`);
+
       if (renditionRef.current) {
+        console.log(`🧹 [EPUB Effect #${effectId}] Destroying rendition`);
         try {
           renditionRef.current.destroy();
         } catch (err) {
-          console.warn('⚠️ Error destroying rendition:', err);
+          console.warn(`⚠️ [EPUB Effect #${effectId}] Error destroying rendition:`, err);
         }
+        renditionRef.current = null;
       }
-      // 只有在文件真正改变时才重置loading标志
-      if (fileNameRef.current !== file.name) {
-        loadingRef.current = false;
-      }
+      console.log(`🧹 [EPUB Effect #${effectId}] Cleanup complete`);
     };
-  }, [file, viewerReady]); // 依赖file和viewerReady
+  }, [file, viewerMounted]);
 
   // 更新主题
   useEffect(() => {
     if (renditionRef.current) {
+      console.log(`🎨 [EPUB Theme] Updating theme to: ${theme}`);
       if (theme === 'dark') {
         renditionRef.current.themes.override('background', '#111827');
         renditionRef.current.themes.override('color', '#f9fafb');
@@ -171,20 +194,21 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
   // 更新字体大小
   useEffect(() => {
     if (renditionRef.current) {
+      console.log(`📝 [EPUB Font] Updating font size to: ${fontSize}px`);
       renditionRef.current.themes.fontSize(`${fontSize}px`);
     }
   }, [fontSize]);
 
   const goToNextPage = useCallback(async () => {
     if (renditionRef.current) {
-      console.log('➡️ EPUB next page requested');
+      console.log('➡️ [EPUB Nav] Next page requested');
       await renditionRef.current.next();
     }
   }, []);
 
   const goToPrevPage = useCallback(async () => {
     if (renditionRef.current) {
-      console.log('⬅️ EPUB previous page requested');
+      console.log('⬅️ [EPUB Nav] Previous page requested');
       await renditionRef.current.prev();
     }
   }, []);
@@ -197,49 +221,50 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
     };
   }, [goToNextPage, goToPrevPage]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 ${
-            theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10'
-          }`}>
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-          <p className={`text-base font-medium ${theme === 'dark' ? 'text-white/70' : 'text-gray-700'}`}>
-            正在加载EPUB文档...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 ${
-            theme === 'dark' ? 'bg-red-500/10' : 'bg-red-500/10'
-          }`}>
-            <span className="text-3xl">❌</span>
-          </div>
-          <p className={`text-base font-medium mb-2 ${theme === 'dark' ? 'text-white/70' : 'text-gray-700'}`}>
-            {error}
-          </p>
-          <p className={`text-sm ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
-            请确保文件是有效的EPUB格式
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div
-      ref={viewerRef}
-      className={`w-full min-h-[600px] rounded-2xl shadow-2xl overflow-hidden ${
-        theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-      }`}
-    />
+    <div className="relative w-full min-h-[600px]">
+      {/* Viewer div - always rendered */}
+      <div
+        ref={viewerRef}
+        className={`w-full min-h-[600px] rounded-2xl shadow-2xl overflow-hidden ${
+          theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+        }`}
+      />
+
+      {/* Loading overlay */}
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
+          <div className="text-center">
+            <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 ${
+              theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10'
+            }`}>
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+            <p className={`text-base font-medium ${theme === 'dark' ? 'text-white/70' : 'text-gray-200'}`}>
+              正在加载EPUB文档...
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Error overlay */}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
+          <div className="text-center max-w-md">
+            <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 ${
+              theme === 'dark' ? 'bg-red-500/10' : 'bg-red-500/10'
+            }`}>
+              <span className="text-3xl">❌</span>
+            </div>
+            <p className={`text-base font-medium mb-2 text-white`}>
+              {error}
+            </p>
+            <p className={`text-sm text-white/70`}>
+              请确保文件是有效的EPUB格式
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

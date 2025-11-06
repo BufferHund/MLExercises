@@ -19,8 +19,7 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<any>(null);
   const pdfDocRef = useRef<any>(null);
-  const loadingRef = useRef(false); // 防止React Strict Mode双重加载
-  const fileNameRef = useRef<string>('');
+  const effectIdRef = useRef(0); // Track effect invocations
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -29,33 +28,46 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
 
   // 加载PDF文件 - 只依赖file
   useEffect(() => {
-    // 防止Strict Mode导致的双重加载
-    if (loadingRef.current && fileNameRef.current === file.name) {
-      console.log('⏭️ Skipping duplicate PDF load (Strict Mode)');
-      return;
-    }
-
-    loadingRef.current = true;
-    fileNameRef.current = file.name;
+    const effectId = ++effectIdRef.current;
+    const startTime = Date.now();
     let mounted = true;
+
+    console.log(`🔵 [PDF Effect #${effectId}] ========== EFFECT START ==========`);
+    console.log(`🔵 [PDF Effect #${effectId}] Timestamp: ${new Date().toISOString()}`);
+    console.log(`🔵 [PDF Effect #${effectId}] File: ${file.name}`);
+    console.log(`🔵 [PDF Effect #${effectId}] File size: ${file.size} bytes (${(file.size/1024/1024).toFixed(2)} MB)`);
 
     const loadPdf = async () => {
       try {
-        console.log('📄 Loading PDF file:', file.name);
+        console.log(`📄 [PDF Effect #${effectId}] Starting file.arrayBuffer()...`);
+        const arrayBuffer = await file.arrayBuffer();
+        const arrayBufferTime = Date.now() - startTime;
+        console.log(`✅ [PDF Effect #${effectId}] ArrayBuffer loaded in ${arrayBufferTime}ms`);
+
+        if (!mounted) {
+          console.log(`⚠️ [PDF Effect #${effectId}] Component unmounted after arrayBuffer, ABORTING`);
+          return;
+        }
+
+        console.log(`📄 [PDF Effect #${effectId}] Starting pdfjsLib.getDocument()...`);
         setLoading(true);
         setError(null);
-        setCurrentPage(1); // 重置页码
-
-        const arrayBuffer = await file.arrayBuffer();
-        console.log('✅ PDF ArrayBuffer loaded, size:', arrayBuffer.byteLength);
+        setCurrentPage(1);
 
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
         const pdfDoc = await loadingTask.promise;
 
-        console.log('✅ PDF document loaded, pages:', pdfDoc.numPages);
+        const docLoadTime = Date.now() - startTime;
+        console.log(`✅ [PDF Effect #${effectId}] PDF document loaded in ${docLoadTime}ms`);
+        console.log(`✅ [PDF Effect #${effectId}] Total pages: ${pdfDoc.numPages}`);
 
-        if (!mounted) return;
+        if (!mounted) {
+          console.log(`⚠️ [PDF Effect #${effectId}] Component unmounted after loading, CLEANING UP`);
+          pdfDoc.cleanup?.();
+          return;
+        }
 
+        console.log(`✅ [PDF Effect #${effectId}] Setting state: pdfDoc, totalPages=${pdfDoc.numPages}, loading=false`);
         pdfDocRef.current = pdfDoc;
         setTotalPages(pdfDoc.numPages);
         setLoading(false);
@@ -64,9 +76,10 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
           onPageChange(1, pdfDoc.numPages);
         }
 
-        console.log('✅ PDF ready for rendering');
+        console.log(`✅ [PDF Effect #${effectId}] PDF ready for rendering`);
       } catch (err: any) {
-        console.error('❌ Error loading PDF:', err);
+        const errorTime = Date.now() - startTime;
+        console.error(`❌ [PDF Effect #${effectId}] Error after ${errorTime}ms:`, err);
         if (mounted) {
           setError(`加载PDF文件失败: ${err.message || '未知错误'}`);
           setLoading(false);
@@ -78,25 +91,28 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
 
     return () => {
       mounted = false;
-      console.log('🧹 PDF loader cleanup');
+      const cleanupTime = Date.now() - startTime;
+      console.log(`🧹 [PDF Effect #${effectId}] ========== CLEANUP CALLED ==========`);
+      console.log(`🧹 [PDF Effect #${effectId}] Cleanup after ${cleanupTime}ms`);
+
       if (pdfDocRef.current) {
+        console.log(`🧹 [PDF Effect #${effectId}] Cleaning up PDF document`);
         pdfDocRef.current.cleanup?.();
+        pdfDocRef.current = null;
       }
-      // 只有在文件真正改变时才重置loading标志
-      if (fileNameRef.current !== file.name) {
-        loadingRef.current = false;
-      }
+      console.log(`🧹 [PDF Effect #${effectId}] Cleanup complete`);
     };
-  }, [file]); // 只依赖file
+  }, [file]);
 
   // 渲染当前页 - 只依赖currentPage和loading
   useEffect(() => {
     if (!pdfDocRef.current || loading || !canvasRef.current || !containerRef.current) {
+      console.log(`⏸️ [PDF Render] Skipping render: pdfDoc=${!!pdfDocRef.current}, loading=${loading}, canvas=${!!canvasRef.current}, container=${!!containerRef.current}`);
       return;
     }
 
     if (rendering) {
-      console.log('⏳ Already rendering, skipping...');
+      console.log('⏳ [PDF Render] Already rendering, skipping...');
       return;
     }
 
@@ -108,7 +124,7 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
 
         // 取消之前的渲染任务
         if (renderTaskRef.current) {
-          console.log('🚫 Cancelling previous render task');
+          console.log('🚫 [PDF Render] Cancelling previous render task');
           renderTaskRef.current.cancel();
           renderTaskRef.current = null;
         }
@@ -124,30 +140,20 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
           return;
         }
 
-        console.log(`📖 Rendering PDF page ${currentPage}/${totalPages}`);
+        console.log(`📖 [PDF Render] Rendering page ${currentPage}/${totalPages}`);
 
         const page = await pdfDocRef.current.getPage(currentPage);
 
-        // 计算合适的缩放比例 - 改进算法
-        const containerWidth = container.clientWidth - 32; // 减去padding
+        // 计算合适的缩放比例
+        const containerWidth = container.clientWidth - 32;
         const viewport = page.getViewport({ scale: 1.0 });
 
-        // 目标：页面宽度占容器的90%
         const targetScale = (containerWidth * 0.9) / viewport.width;
-        // 限制在合理范围：最小1.0，最大2.5
         const scale = Math.min(Math.max(targetScale, 1.0), 2.5);
 
         const scaledViewport = page.getViewport({ scale });
 
-        console.log('📐 Viewport calculated:', {
-          containerWidth,
-          pageWidth: viewport.width,
-          pageHeight: viewport.height,
-          targetScale,
-          finalScale: scale,
-          scaledWidth: scaledViewport.width,
-          scaledHeight: scaledViewport.height
-        });
+        console.log(`📐 [PDF Render] Viewport: container=${containerWidth}px, page=${viewport.width}x${viewport.height}, scale=${scale.toFixed(2)}, final=${scaledViewport.width}x${scaledViewport.height}`);
 
         // 设置canvas尺寸
         const outputScale = window.devicePixelRatio || 1;
@@ -175,16 +181,14 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
 
         if (!mounted) return;
 
-        console.log('✅ Page rendered successfully');
+        console.log('✅ [PDF Render] Page rendered successfully');
         renderTaskRef.current = null;
 
-        // 更新进度
         const progress = Math.round((currentPage / totalPages) * 100);
         if (onProgressChange) {
           onProgressChange(progress);
         }
 
-        // 通知页面变化
         if (onPageChange) {
           onPageChange(currentPage, totalPages);
         }
@@ -192,9 +196,9 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
         setRendering(false);
       } catch (err: any) {
         if (err.name === 'RenderingCancelledException') {
-          console.log('⚠️ Rendering was cancelled');
+          console.log('⚠️ [PDF Render] Rendering was cancelled');
         } else {
-          console.error('❌ Error rendering page:', err);
+          console.error('❌ [PDF Render] Error rendering page:', err);
           if (mounted) {
             setError(`渲染PDF页面失败: ${err.message || '未知错误'}`);
           }
@@ -212,18 +216,18 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
         renderTaskRef.current = null;
       }
     };
-  }, [currentPage, loading]); // 只依赖currentPage和loading
+  }, [currentPage, loading]);
 
   const goToNextPage = useCallback(() => {
     if (currentPage < totalPages && !rendering) {
-      console.log('➡️ Next page requested');
+      console.log(`➡️ [PDF Nav] Next page requested: ${currentPage} -> ${currentPage + 1}`);
       setCurrentPage(prev => prev + 1);
     }
   }, [currentPage, totalPages, rendering]);
 
   const goToPrevPage = useCallback(() => {
     if (currentPage > 1 && !rendering) {
-      console.log('⬅️ Previous page requested');
+      console.log(`⬅️ [PDF Nav] Previous page requested: ${currentPage} -> ${currentPage - 1}`);
       setCurrentPage(prev => prev - 1);
     }
   }, [currentPage, rendering]);
