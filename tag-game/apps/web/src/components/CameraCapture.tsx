@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import { Box, IconButton, Stack, Alert, Button, Fab } from '@mui/material';
+import { Close as CloseIcon, CameraAlt as CameraIcon, Refresh as RefreshIcon, Check as CheckIcon } from '@mui/icons-material';
 
 interface CameraCaptureProps {
   onCapture: (file: File) => void;
@@ -83,75 +85,110 @@ export default function CameraCapture({ onCapture, onCancel }: CameraCaptureProp
 
   if (error) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col items-center justify-center p-4">
-        <div className="bg-white rounded-lg p-6 max-w-sm w-full text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={onCancel}
-            className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded"
-          >
-            关闭
-          </button>
-        </div>
-      </div>
+      <Box
+        sx={{
+          position: 'fixed',
+          inset: 0,
+          bgcolor: 'rgba(0,0,0,0.9)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 2,
+        }}
+      >
+        <Box sx={{ maxWidth: 400 }}>
+          <Alert severity="error" action={
+            <Button color="inherit" size="small" onClick={onCancel}>关闭</Button>
+          }>
+            {error}
+          </Alert>
+        </Box>
+      </Box>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col">
+    <Box
+      sx={{
+        position: 'fixed',
+        inset: 0,
+        bgcolor: 'black',
+        zIndex: 9999,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* 顶部关闭按钮 */}
+      <Box sx={{ position: 'absolute', top: 16, left: 16, zIndex: 1 }}>
+        <IconButton onClick={onCancel} sx={{ color: 'white', bgcolor: 'rgba(0,0,0,0.5)' }}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
+
       {/* 视频预览或拍摄结果 */}
-      <div className="flex-1 relative bg-black flex items-center justify-center">
+      <Box
+        sx={{
+          flex: 1,
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         {capturedImage ? (
           <img
             src={capturedImage}
             alt="Captured"
-            className="max-w-full max-h-full object-contain"
+            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
           />
         ) : (
           <video
             ref={videoRef}
             autoPlay
             playsInline
-            className="max-w-full max-h-full object-contain"
+            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
           />
         )}
-        <canvas ref={canvasRef} className="hidden" />
-      </div>
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
+      </Box>
 
       {/* 控制按钮 */}
-      <div className="bg-gray-900 p-6">
+      <Box sx={{ bgcolor: 'rgba(0,0,0,0.8)', p: 3, pb: 4 }}>
         {capturedImage ? (
-          <div className="flex gap-4 justify-center">
-            <button
+          <Stack direction="row" spacing={2} justifyContent="center">
+            <Button
+              variant="outlined"
+              size="large"
+              startIcon={<RefreshIcon />}
               onClick={retake}
-              className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-8 rounded-lg"
+              sx={{ color: 'white', borderColor: 'white' }}
             >
               重拍
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="contained"
+              size="large"
+              color="success"
+              startIcon={<CheckIcon />}
               onClick={confirm}
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg"
             >
               确认
-            </button>
-          </div>
+            </Button>
+          </Stack>
         ) : (
-          <div className="flex gap-4 justify-center">
-            <button
-              onClick={onCancel}
-              className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-8 rounded-lg"
-            >
-              取消
-            </button>
-            <button
+          <Stack direction="row" spacing={3} justifyContent="center" alignItems="center">
+            <Fab
+              color="error"
+              size="large"
               onClick={takePhoto}
-              className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-12 rounded-full"
+              sx={{ width: 80, height: 80 }}
             >
-              拍照
-            </button>
-          </div>
+              <CameraIcon sx={{ fontSize: 40 }} />
+            </Fab>
+          </Stack>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
