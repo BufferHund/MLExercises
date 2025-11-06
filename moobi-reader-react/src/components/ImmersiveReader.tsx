@@ -567,14 +567,11 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       case 'pdf':
         if (pdfDisplayMode === 'native') {
           // 使用浏览器原生PDF查看器
-          // 高度：控制栏显示时70vh，隐藏时85vh
-          const height = showControls ? '70vh' : '85vh';
-
+          // 高度自适应父容器，通过flex布局自动计算
           return (
             <iframe
               src={pdfUrl || ''}
-              className="w-full border-0 transition-all duration-300"
-              style={{ height }}
+              className="w-full h-full border-0 transition-all duration-500 ease-smooth"
               title={fileName}
             />
           );
@@ -633,10 +630,10 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       className={`fixed inset-0 z-50 flex flex-col ${themeColors.bg} transition-colors duration-300`}
       onMouseMove={handleMouseMove}
     >
-      {/* 顶部控制栏 - 原生PDF模式下隐藏 */}
+      {/* 顶部控制栏 */}
       <div
         className={`flex-shrink-0 transition-all duration-300 ${
-          zenMode || (fileType === 'pdf' && pdfDisplayMode === 'native') ? 'hidden' : (showControls ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0')
+          zenMode ? 'hidden' : (showControls ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0')
         }`}
       >
         <div className={`${themeColors.controlBg} backdrop-blur-xl border-b ${themeColors.border}`}>
@@ -710,10 +707,10 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         )}
       </div>
 
-      {/* 底部控制栏 - 原生PDF模式下隐藏 */}
+      {/* 底部控制栏 */}
       <div
         className={`flex-shrink-0 transition-all duration-300 ${
-          zenMode || (fileType === 'pdf' && pdfDisplayMode === 'native') ? 'hidden' : (showControls ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0')
+          zenMode ? 'hidden' : (showControls ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0')
         }`}
       >
         <div className={`${themeColors.controlBg} backdrop-blur-xl border-t ${themeColors.border}`}>
@@ -863,8 +860,8 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         </div>
       </div>
 
-      {/* 常驻浮动控制栏 - 右下角 - 只在主控制栏隐藏时显示，原生PDF模式下不显示 */}
-      {!zenMode && !showControls && !(fileType === 'pdf' && pdfDisplayMode === 'native') && (
+      {/* 常驻浮动控制栏 - 右下角 - 只在主控制栏隐藏时显示 */}
+      {!zenMode && !showControls && (
         <div className={`fixed bottom-6 right-6 z-50 ${themeColors.controlBg} backdrop-blur-xl rounded-2xl shadow-2xl border ${themeColors.border} p-3 animate-scale-in`}>
           <div className="flex flex-col gap-2">
             {/* 翻页控制 */}
@@ -908,9 +905,9 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         </div>
       )}
 
-      {/* PDF显示模式切换按钮 - 右下角 */}
+      {/* PDF显示模式切换按钮 - 左下角 */}
       {fileType === 'pdf' && !zenMode && (
-        <div className={`fixed bottom-6 right-6 z-50 ${themeColors.controlBg} backdrop-blur-xl rounded-2xl shadow-2xl border ${themeColors.border} p-3 transition-all duration-300`}>
+        <div className={`fixed bottom-6 left-6 z-50 ${themeColors.controlBg} backdrop-blur-xl rounded-2xl shadow-2xl border ${themeColors.border} p-3 transition-all duration-300`}>
           <button
             onClick={() => setPdfDisplayMode(pdfDisplayMode === 'native' ? 'custom' : 'native')}
             className={`p-2 ${themeColors.hover} rounded-xl transition-colors flex items-center gap-2`}
