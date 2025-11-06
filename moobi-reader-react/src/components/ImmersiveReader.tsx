@@ -422,21 +422,63 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     setProgress(calculatedProgress);
   };
 
-  // 获取主题颜色
+  // 获取主题颜色 - 纸张颜色和背景颜色分离
   const getThemeColors = () => {
     switch (theme) {
       case 'light':
-        return { bg: 'bg-gray-50', text: 'text-gray-900', border: 'border-gray-900/10', controlBg: 'bg-gray-50/95', hover: 'hover:bg-gray-900/10' };
+        return {
+          bg: 'bg-gray-200', // 更暗的背景
+          paper: 'bg-white', // 纸张颜色
+          text: 'text-gray-900',
+          border: 'border-gray-900/10',
+          controlBg: 'bg-white/95',
+          hover: 'hover:bg-gray-900/10'
+        };
       case 'dark':
-        return { bg: 'bg-gray-900', text: 'text-white', border: 'border-white/10', controlBg: 'bg-gray-900/95', hover: 'hover:bg-white/10' };
+        return {
+          bg: 'bg-black', // 更暗的背景
+          paper: 'bg-gray-900', // 纸张颜色
+          text: 'text-white',
+          border: 'border-white/10',
+          controlBg: 'bg-gray-900/95',
+          hover: 'hover:bg-white/10'
+        };
       case 'sepia':
-        return { bg: 'bg-[#f4ecd8]', text: 'text-[#5c4a2f]', border: 'border-[#5c4a2f]/10', controlBg: 'bg-[#f4ecd8]/95', hover: 'hover:bg-[#5c4a2f]/10' };
+        return {
+          bg: 'bg-[#3d3426]', // 深棕色背景
+          paper: 'bg-[#f4ecd8]', // 米色纸张
+          text: 'text-[#5c4a2f]',
+          border: 'border-[#5c4a2f]/10',
+          controlBg: 'bg-[#f4ecd8]/95',
+          hover: 'hover:bg-[#5c4a2f]/10'
+        };
       case 'green':
-        return { bg: 'bg-[#cce8cc]', text: 'text-[#2d4a2d]', border: 'border-[#2d4a2d]/10', controlBg: 'bg-[#cce8cc]/95', hover: 'hover:bg-[#2d4a2d]/10' };
+        return {
+          bg: 'bg-[#1a2e1a]', // 深绿色背景
+          paper: 'bg-[#cce8cc]', // 浅绿色纸张
+          text: 'text-[#2d4a2d]',
+          border: 'border-[#2d4a2d]/10',
+          controlBg: 'bg-[#cce8cc]/95',
+          hover: 'hover:bg-[#2d4a2d]/10'
+        };
       case 'blue':
-        return { bg: 'bg-[#e0f2ff]', text: 'text-[#1e3a5f]', border: 'border-[#1e3a5f]/10', controlBg: 'bg-[#e0f2ff]/95', hover: 'hover:bg-[#1e3a5f]/10' };
+        return {
+          bg: 'bg-[#0d1f35]', // 深蓝色背景
+          paper: 'bg-[#e0f2ff]', // 浅蓝色纸张
+          text: 'text-[#1e3a5f]',
+          border: 'border-[#1e3a5f]/10',
+          controlBg: 'bg-[#e0f2ff]/95',
+          hover: 'hover:bg-[#1e3a5f]/10'
+        };
       default:
-        return { bg: 'bg-gray-900', text: 'text-white', border: 'border-white/10', controlBg: 'bg-gray-900/95', hover: 'hover:bg-white/10' };
+        return {
+          bg: 'bg-black',
+          paper: 'bg-gray-900',
+          text: 'text-white',
+          border: 'border-white/10',
+          controlBg: 'bg-gray-900/95',
+          hover: 'hover:bg-white/10'
+        };
     }
   };
 
@@ -562,8 +604,13 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
       {/* 主阅读区域 */}
       <div ref={readerContainerRef} className="flex-1 overflow-y-auto">
-        <div className={`${getLayoutWidth()} mx-auto px-8 py-12 pb-48`}>
-          {renderReader()}
+        {/* 纸张容器 - 有阴影效果 */}
+        <div className={`${getLayoutWidth()} mx-auto ${layoutMode === 'full' ? 'px-0' : 'px-4 sm:px-6'} py-12 pb-32`}>
+          <div className={`${themeColors.paper} ${themeColors.text} ${layoutMode === 'full' ? 'shadow-none' : 'shadow-2xl'} min-h-screen transition-all duration-300`}>
+            <div className="px-8 py-12">
+              {renderReader()}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -701,6 +748,64 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
           </div>
         </div>
       </div>
+
+      {/* 常驻浮动控制栏 - 右下角 */}
+      {!zenMode && (
+        <div className={`fixed bottom-6 right-6 z-50 ${themeColors.controlBg} backdrop-blur-xl rounded-2xl shadow-2xl border ${themeColors.border} p-3`}>
+          <div className="flex flex-col gap-2">
+            {/* 翻页控制 */}
+            <div className="flex gap-2">
+              <button
+                onClick={handlePrevPage}
+                className={`p-2 ${themeColors.hover} rounded-xl transition-colors`}
+                title="上一页 (←)"
+              >
+                <ChevronLeft className={`w-4 h-4 ${themeColors.text}`} />
+              </button>
+              <button
+                onClick={handleNextPage}
+                className={`p-2 ${themeColors.hover} rounded-xl transition-colors`}
+                title="下一页 (→)"
+              >
+                <ChevronRight className={`w-4 h-4 ${themeColors.text}`} />
+              </button>
+            </div>
+
+            {/* 分隔线 */}
+            <div className={`h-px ${themeColors.border}`} />
+
+            {/* 常用功能 */}
+            <button
+              onClick={handleAddBookmark}
+              className={`p-2 ${themeColors.hover} rounded-xl transition-colors`}
+              title="添加书签"
+            >
+              <Bookmark className={`w-4 h-4 ${themeColors.text}`} />
+            </button>
+
+            <button
+              onClick={() => setShowSettings(true)}
+              className={`p-2 ${themeColors.hover} rounded-xl transition-colors`}
+              title="设置"
+            >
+              <Settings className={`w-4 h-4 ${themeColors.text}`} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Zen 模式退出提示 */}
+      {zenMode && (
+        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[60]">
+          <button
+            onClick={() => setZenMode(false)}
+            className="px-6 py-3 bg-black/70 hover:bg-black/90 backdrop-blur-xl text-white rounded-full shadow-2xl transition-all flex items-center gap-3 group"
+          >
+            <span className="text-sm font-medium">🧘 Zen 模式</span>
+            <span className="text-xs opacity-60 group-hover:opacity-100">按 Z 或点击退出</span>
+          </button>
+        </div>
+      )}
 
       {/* 设置面板 */}
       {showSettings && (
