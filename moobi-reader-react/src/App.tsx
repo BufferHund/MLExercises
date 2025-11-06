@@ -1,16 +1,18 @@
 import { useState } from 'react';
-import { BookOpen, Bookmark, Search, TrendingUp, Upload } from 'lucide-react';
+import { Bookmark, Search, TrendingUp, Upload, Library } from 'lucide-react';
 import { useBookStore } from './stores/useBookStore';
 import WelcomeScreen from './components/WelcomeScreen';
 import FileUploader from './components/FileUploader';
 import RecentBooks from './components/RecentBooks';
 import ImmersiveReader from './components/ImmersiveReader';
+import Bookshelf from './components/Bookshelf';
 import type { Book } from './types';
 
 function App() {
   const { bookshelf } = useBookStore();
   const [currentFile, setCurrentFile] = useState<{ file: File; name: string; type: string } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [view, setView] = useState<'home' | 'bookshelf'>('home');
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -57,6 +59,11 @@ function App() {
     );
   }
 
+  // 如果在书架视图
+  if (view === 'bookshelf') {
+    return <Bookshelf onOpenFile={handleFileSelect} onBack={() => setView('home')} theme="dark" />;
+  }
+
   // 否则显示主界面
   return (
     <div
@@ -91,13 +98,14 @@ function App() {
           {/* 功能卡片 */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
             {[
-              { icon: BookOpen, title: '书架管理', desc: '自动保存历史', color: 'from-primary to-primary-light' },
-              { icon: Bookmark, title: '书签笔记', desc: '标记重要内容', color: 'from-accent-pink to-accent-orange' },
-              { icon: TrendingUp, title: '阅读统计', desc: '追踪进度', color: 'from-accent-green to-accent-teal' },
-              { icon: Search, title: '全文搜索', desc: '快速查找', color: 'from-secondary to-accent-purple' },
+              { icon: Library, title: '书架管理', desc: '自动保存历史', color: 'from-primary to-primary-light', action: () => setView('bookshelf') },
+              { icon: Bookmark, title: '书签笔记', desc: '标记重要内容', color: 'from-accent-pink to-accent-orange', action: () => setView('bookshelf') },
+              { icon: TrendingUp, title: '阅读统计', desc: '追踪进度', color: 'from-accent-green to-accent-teal', action: () => setView('bookshelf') },
+              { icon: Search, title: '全文搜索', desc: '快速查找', color: 'from-secondary to-accent-purple', action: () => alert('全文搜索功能在阅读界面中使用') },
             ].map((feature, i) => (
               <div
                 key={i}
+                onClick={feature.action}
                 className="group text-center p-6 bg-white/5 rounded-3xl hover:bg-white/10 transition-all duration-300 ease-smooth hover:scale-105 hover:shadow-soft-lg cursor-pointer border border-white/10 hover:border-white/20 animate-scale-in"
                 style={{ animationDelay: `${i * 100}ms` }}
               >
