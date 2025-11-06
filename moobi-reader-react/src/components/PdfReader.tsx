@@ -10,6 +10,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 interface PdfReaderProps {
   file: File;
   theme: 'light' | 'dark';
+  zoom?: number; // 缩放百分比 (50-200)
   onPageChange?: (current: number, total: number) => void;
   onProgressChange?: (progress: number) => void;
 }
@@ -53,7 +54,7 @@ async function loadFileWithCache(file: File, effectId: number): Promise<ArrayBuf
   return result;
 }
 
-export default function PdfReader({ file, theme, onPageChange, onProgressChange }: PdfReaderProps) {
+export default function PdfReader({ file, theme, zoom = 100, onPageChange, onProgressChange }: PdfReaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<any>(null);
@@ -182,16 +183,19 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
 
         const page = await pdfDocRef.current.getPage(currentPage);
 
-        // 计算合适的缩放比例
+        // 计算合适的缩放比例，考虑用户设置的zoom
         const containerWidth = container.clientWidth - 32;
         const viewport = page.getViewport({ scale: 1.0 });
 
         const targetScale = (containerWidth * 0.9) / viewport.width;
-        const scale = Math.min(Math.max(targetScale, 1.0), 2.5);
+        const autoScale = Math.min(Math.max(targetScale, 1.0), 2.5);
+
+        // 应用用户的缩放百分比 (zoom: 100 = 1.0, 150 = 1.5, etc.)
+        const scale = autoScale * (zoom / 100);
 
         const scaledViewport = page.getViewport({ scale });
 
-        console.log(`📐 [PDF Render] Viewport: container=${containerWidth}px, page=${viewport.width}x${viewport.height}, scale=${scale.toFixed(2)}, final=${scaledViewport.width}x${scaledViewport.height}`);
+        console.log(`📐 [PDF Render] Viewport: container=${containerWidth}px, page=${viewport.width}x${viewport.height}, autoScale=${autoScale.toFixed(2)}, zoom=${zoom}%, finalScale=${scale.toFixed(2)}, final=${scaledViewport.width}x${scaledViewport.height}`);
 
         // 设置canvas尺寸
         const outputScale = window.devicePixelRatio || 1;
@@ -254,7 +258,7 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
         renderTaskRef.current = null;
       }
     };
-  }, [currentPage, loading]);
+  }, [currentPage, loading, zoom]);
 
   const goToNextPage = useCallback(() => {
     if (currentPage < totalPages && !rendering) {
@@ -270,13 +274,21 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
     }
   }, [currentPage, rendering]);
 
+  const goToPage = useCallback((page: number) => {
+    if (page >= 1 && page <= totalPages && !rendering) {
+      console.log(`🔢 [PDF Nav] Go to page requested: ${currentPage} -> ${page}`);
+      setCurrentPage(page);
+    }
+  }, [currentPage, totalPages, rendering]);
+
   // 导出方法供父组件调用
   useEffect(() => {
     (window as any).pdfReaderControls = {
       nextPage: goToNextPage,
       prevPage: goToPrevPage,
+      goToPage: goToPage,
     };
-  }, [goToNextPage, goToPrevPage]);
+  }, [goToNextPage, goToPrevPage, goToPage]);
 
   if (loading) {
     return (
