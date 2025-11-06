@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, Settings, Moon, Sun, Bookmark, Menu } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Settings, Moon, Sun, Bookmark } from 'lucide-react';
+import PdfReader from './PdfReader';
+import EpubReader from './EpubReader';
+import TextReader from './TextReader';
 
 interface ImmersiveReaderProps {
+  file: File;
   fileName: string;
   fileType: string;
   onClose: () => void;
 }
 
-export default function ImmersiveReader({ fileName, fileType, onClose }: ImmersiveReaderProps) {
+export default function ImmersiveReader({ file, fileName, fileType, onClose }: ImmersiveReaderProps) {
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -40,11 +44,81 @@ export default function ImmersiveReader({ fileName, fileType, onClose }: Immersi
   };
 
   const handleNextPage = () => {
-    setProgress(Math.min(100, progress + 5));
+    if (fileType === 'pdf' && (window as any).pdfReaderControls) {
+      (window as any).pdfReaderControls.nextPage();
+    } else if (fileType === 'epub' && (window as any).epubReaderControls) {
+      (window as any).epubReaderControls.nextPage();
+    } else {
+      setProgress(Math.min(100, progress + 5));
+    }
   };
 
   const handlePrevPage = () => {
-    setProgress(Math.max(0, progress - 5));
+    if (fileType === 'pdf' && (window as any).pdfReaderControls) {
+      (window as any).pdfReaderControls.prevPage();
+    } else if (fileType === 'epub' && (window as any).epubReaderControls) {
+      (window as any).epubReaderControls.prevPage();
+    } else {
+      setProgress(Math.max(0, progress - 5));
+    }
+  };
+
+  const handleProgressChange = (newProgress: number) => {
+    setProgress(newProgress);
+  };
+
+  const handlePageChange = (current: number, total: number) => {
+    const calculatedProgress = Math.round((current / total) * 100);
+    setProgress(calculatedProgress);
+  };
+
+  const renderReader = () => {
+    switch (fileType.toLowerCase()) {
+      case 'pdf':
+        return (
+          <PdfReader
+            file={file}
+            theme={theme}
+            onPageChange={handlePageChange}
+            onProgressChange={handleProgressChange}
+          />
+        );
+      case 'epub':
+        return (
+          <EpubReader
+            file={file}
+            fontSize={fontSize}
+            theme={theme}
+            onProgressChange={handleProgressChange}
+          />
+        );
+      case 'txt':
+      case 'md':
+        return (
+          <TextReader
+            file={file}
+            fontSize={fontSize}
+            theme={theme}
+            onProgressChange={handleProgressChange}
+          />
+        );
+      default:
+        return (
+          <div className="text-center py-16">
+            <div className={`inline-flex items-center justify-center w-24 h-24 rounded-3xl mb-8 ${
+              theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'
+            }`}>
+              <span className="text-4xl">📄</span>
+            </div>
+            <h3 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              暂不支持此格式
+            </h3>
+            <p className={`text-base ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`}>
+              {fileType.toUpperCase()} 格式的阅读功能即将推出
+            </p>
+          </div>
+        );
+    }
   };
 
   return (
@@ -105,92 +179,8 @@ export default function ImmersiveReader({ fileName, fileType, onClose }: Immersi
 
       {/* 主阅读区域 */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-8 py-12">
-          <div
-            className={`${theme === 'dark' ? 'text-white/90' : 'text-gray-900'}`}
-            style={{ fontSize: `${fontSize}px`, lineHeight: 1.8 }}
-          >
-            {/* 这里将显示实际的文档内容 */}
-            <div className="text-center py-16">
-              <div className={`inline-flex items-center justify-center w-24 h-24 rounded-3xl mb-8 ${
-                theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'
-              }`}>
-                <Menu className={`w-12 h-12 ${theme === 'dark' ? 'text-white/30' : 'text-gray-900/30'}`} />
-              </div>
-
-              <h3 className={`text-3xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                沉浸式阅读模式
-              </h3>
-
-              <p className={`text-lg mb-8 ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`}>
-                {fileName}
-              </p>
-
-              <div className={`max-w-2xl mx-auto p-8 rounded-3xl mb-8 ${
-                theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'
-              }`}>
-                <p className={`text-base mb-6 font-medium ${theme === 'dark' ? 'text-white/70' : 'text-gray-700'}`}>
-                  💡 完整实现需要集成相应的渲染库
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-                  <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'}`}>
-                    <div className="text-2xl mb-2">📖</div>
-                    <div className={`font-semibold text-sm mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                      EPUB
-                    </div>
-                    <div className={`text-xs ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
-                      epub.js
-                    </div>
-                  </div>
-
-                  <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'}`}>
-                    <div className="text-2xl mb-2">📄</div>
-                    <div className={`font-semibold text-sm mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                      PDF
-                    </div>
-                    <div className={`text-xs ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
-                      pdfjs-dist
-                    </div>
-                  </div>
-
-                  <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'}`}>
-                    <div className="text-2xl mb-2">📝</div>
-                    <div className={`font-semibold text-sm mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                      TXT / MD
-                    </div>
-                    <div className={`text-xs ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
-                      纯文本渲染
-                    </div>
-                  </div>
-
-                  <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'}`}>
-                    <div className="text-2xl mb-2">📚</div>
-                    <div className={`font-semibold text-sm mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                      MOBI / AZW3
-                    </div>
-                    <div className={`text-xs ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
-                      mobi.js
-                    </div>
-                  </div>
-
-                  <div className={`p-4 rounded-2xl ${theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'} sm:col-span-2`}>
-                    <div className="text-2xl mb-2">📃</div>
-                    <div className={`font-semibold text-sm mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                      DOCX
-                    </div>
-                    <div className={`text-xs ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
-                      mammoth.js
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <p className={`text-sm ${theme === 'dark' ? 'text-white/40' : 'text-gray-500'}`}>
-                移动鼠标显示/隐藏控制栏 • 全屏模式下 3 秒自动隐藏
-              </p>
-            </div>
-          </div>
+        <div className="max-w-5xl mx-auto px-8 py-12">
+          {renderReader()}
         </div>
       </div>
 

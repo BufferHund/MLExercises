@@ -9,7 +9,7 @@ import type { Book } from './types';
 
 function App() {
   const { bookshelf } = useBookStore();
-  const [currentFile, setCurrentFile] = useState<{ name: string; type: string } | null>(null);
+  const [currentFile, setCurrentFile] = useState<{ file: File; name: string; type: string } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -32,11 +32,13 @@ function App() {
 
   const handleFileSelect = (file: File) => {
     const fileType = file.name.split('.').pop()?.toLowerCase() || 'unknown';
-    setCurrentFile({ name: file.name, type: fileType });
+    setCurrentFile({ file, name: file.name, type: fileType });
   };
 
-  const handleBookClick = (book: Book) => {
-    setCurrentFile({ name: book.title, type: book.format });
+  const handleBookClick = (_book: Book) => {
+    // Note: For stored books, we would need to retrieve the actual File object from storage
+    // For now, this is a placeholder - real implementation would fetch the file
+    alert('书架功能需要完整的文件存储实现。请直接上传文件进行阅读。');
   };
 
   const handleCloseReader = () => {
@@ -47,6 +49,7 @@ function App() {
   if (currentFile) {
     return (
       <ImmersiveReader
+        file={currentFile.file}
         fileName={currentFile.name}
         fileType={currentFile.type}
         onClose={handleCloseReader}
