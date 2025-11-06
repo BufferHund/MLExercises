@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { X, ChevronLeft, ChevronRight, Settings, Bookmark, ZoomIn, ZoomOut, Search, Highlighter } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Settings, Bookmark, ZoomIn, ZoomOut, Search, Highlighter, Sun, Moon } from 'lucide-react';
 import PdfReader from './PdfReader';
 import EpubReader from './EpubReader';
 import TextReader from './TextReader';
@@ -46,7 +46,7 @@ interface HighlightData {
 export default function ImmersiveReader({ file, fileName, fileType, onClose }: ImmersiveReaderProps) {
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'sepia' | 'green' | 'blue'>('dark');
+  const [theme, setTheme] = useState<'light' | 'dark' | 'sepia' | 'green' | 'blue'>('light');
   const [fontSize, setFontSize] = useState(18);
   const [progress, setProgress] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -518,17 +518,19 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     }
   };
 
-  // 获取布局宽度
+  // 获取布局宽度 - 控制栏隐藏时使用更大宽度
   const getLayoutWidth = () => {
+    const isExpanded = !showControls;
+
     switch (layoutMode) {
       case 'elegant':
-        return 'max-w-5xl'; // 优雅居中模式
+        return isExpanded ? 'max-w-[1600px]' : 'max-w-7xl'; // 控制栏隐藏时更宽
       case 'a4':
-        return 'max-w-[210mm]'; // A4纸张模式
+        return 'max-w-[210mm]'; // A4纸张模式固定
       case 'full':
         return 'max-w-full'; // 全宽模式
       default:
-        return 'max-w-5xl';
+        return isExpanded ? 'max-w-[1600px]' : 'max-w-7xl';
     }
   };
 
@@ -653,19 +655,17 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
             {/* 右侧控制 */}
             <div className="flex items-center gap-2">
               {/* 主题快速切换 - 白天/黑夜 */}
-              <div className="flex items-center gap-1 px-2 py-1 rounded-xl bg-black/5">
-                <button
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    theme === 'dark'
-                      ? 'bg-gray-900 text-white shadow'
-                      : 'bg-white text-gray-900 shadow'
-                  }`}
-                  title="切换白天/黑夜模式"
-                >
-                  {theme === 'dark' ? '夜间' : '白天'}
-                </button>
-              </div>
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className={`p-2.5 ${themeColors.hover} rounded-xl transition-colors`}
+                title="切换白天/黑夜模式"
+              >
+                {theme === 'dark' ? (
+                  <Moon className={`w-5 h-5 ${themeColors.text}`} />
+                ) : (
+                  <Sun className={`w-5 h-5 ${themeColors.text}`} />
+                )}
+              </button>
 
               <button
                 onClick={() => setShowSettings(true)}
@@ -694,8 +694,8 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
             {renderReader()}
           </div>
         ) : (
-          /* 内容容器 - 居中显示，无边框 */
-          <div className={`${getLayoutWidth()} w-full mx-auto transition-none`}>
+          /* 内容容器 - 居中显示，圆角 */
+          <div className={`${getLayoutWidth()} w-full mx-auto transition-none overflow-hidden rounded-2xl`}>
             {renderReader()}
           </div>
         )}
@@ -1006,7 +1006,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                     onClick={() => setLayoutMode('elegant')}
                     className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
                       layoutMode === 'elegant'
-                        ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                        ? 'bg-gradient-to-r from-primary to-secondary !text-white'
                         : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                     }`}
                   >
@@ -1017,7 +1017,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                       onClick={() => setLayoutMode('a4')}
                       className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
                         layoutMode === 'a4'
-                          ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                          ? 'bg-gradient-to-r from-primary to-secondary !text-white'
                           : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                       }`}
                     >
@@ -1028,7 +1028,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                     onClick={() => setLayoutMode('full')}
                     className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
                       layoutMode === 'full'
-                        ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                        ? 'bg-gradient-to-r from-primary to-secondary !text-white'
                         : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                     }`}
                   >
@@ -1048,7 +1048,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                       onClick={() => setPageMode('single')}
                       className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
                         pageMode === 'single'
-                          ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                          ? 'bg-gradient-to-r from-primary to-secondary !text-white'
                           : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                       }`}
                     >
@@ -1058,7 +1058,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                       onClick={() => setPageMode('double')}
                       className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
                         pageMode === 'double'
-                          ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                          ? 'bg-gradient-to-r from-primary to-secondary !text-white'
                           : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                       }`}
                     >

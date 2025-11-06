@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bookmark, Search, TrendingUp, Upload, Library } from 'lucide-react';
 import { useBookStore } from './stores/useBookStore';
+import { bookStorage, type StoredBook } from './utils/bookStorage';
 import WelcomeScreen from './components/WelcomeScreen';
 import FileUploader from './components/FileUploader';
 import RecentBooks from './components/RecentBooks';
@@ -10,9 +11,24 @@ import type { Book } from './types';
 
 function App() {
   const { bookshelf } = useBookStore();
-  const [currentFile, setCurrentFile] = useState<{ file: File; name: string; type: string } | null>(null);
+  const [currentFile, setCurrentFile] = useState<{ file: File; name: string; type: string; bookId?: string } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [view, setView] = useState<'home' | 'bookshelf'>('home');
+  const [storedBooks, setStoredBooks] = useState<StoredBook[]>([]);
+
+  // 初始化 IndexedDB 并加载已保存的书籍
+  useEffect(() => {
+    const loadBooks = async () => {
+      try {
+        await bookStorage.init();
+        const books = await bookStorage.getAllBooks();
+        setStoredBooks(books);
+      } catch (error) {
+        console.error('Failed to load books from storage:', error);
+      }
+    };
+    loadBooks();
+  }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -32,15 +48,60 @@ function App() {
     }
   };
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = async (file: File) => {
     const fileType = file.name.split('.').pop()?.toLowerCase() || 'unknown';
-    setCurrentFile({ file, name: file.name, type: fileType });
+
+    try {
+      // 保存到 IndexedDB
+      const bookId = await bookStorage.saveBook(file);
+
+      // 重新加载书籍列表
+      const books = await bookStorage.getAllBooks();
+      setStoredBooks(books);
+
+      // 打开书籍
+      setCurrentFile({ file, name: file.name, type: fileType, bookId });
+    } catch (error) {
+      console.error('Failed to save book:', error);
+      // 即使保存失败，仍然可以打开书籍
+      setCurrentFile({ file, name: file.name, type: fileType });
+    }
   };
 
-  const handleBookClick = (_book: Book) => {
-    // Note: For stored books, we would need to retrieve the actual File object from storage
-    // For now, this is a placeholder - real implementation would fetch the file
-    alert('书架功能需要完整的文件存储实现。请直接上传文件进行阅读。');
+  const handleBookClick = async (book: Book) => {
+    // 尝试从 IndexedDB 读取书籍
+    try {
+      // 查找匹配的存储书籍（通过文件名匹配）
+      const storedBook = storedBooks.find(sb => sb.fileName === book.title);
+
+      if (storedBook) {
+        // 从 IndexedDB 读取完整的书籍数据
+        const fullBook = await bookStorage.getBook(storedBook.id);
+        if (fullBook) {
+          // 更新最后打开时间
+          await bookStorage.updateLastOpened(storedBook.id);
+
+          // 创建 File 对象
+          const file = new File([fullBook.file], fullBook.fileName, {
+            type: fullBook.file.type,
+          });
+
+          setCurrentFile({
+            file,
+            name: fullBook.fileName,
+            type: fullBook.fileType,
+            bookId: fullBook.id,
+          });
+          return;
+        }
+      }
+
+      // 如果找不到，显示提示
+      alert('无法找到书籍文件。请重新上传该书籍。');
+    } catch (error) {
+      console.error('Failed to load book:', error);
+      alert('加载书籍失败，请重试。');
+    }
   };
 
   const handleCloseReader = () => {
