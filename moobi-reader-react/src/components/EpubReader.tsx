@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import ePub from 'epubjs';
 import type { Rendition } from 'epubjs';
 
@@ -11,19 +11,26 @@ interface EpubReaderProps {
 
 export default function EpubReader({ file, fontSize, theme, onProgressChange }: EpubReaderProps) {
   const viewerRef = useRef<HTMLDivElement>(null);
-  const [rendition, setRendition] = useState<Rendition | null>(null);
+  const bookRef = useRef<any>(null);
+  const renditionRef = useRef<Rendition | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+
+  // Callback ref to ensure div is ready
+  const setViewerRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      viewerRef.current = node;
+      setReady(true);
+    }
+  }, []);
 
   // 加载EPUB文件
   useEffect(() => {
     let mounted = true;
-    let blobUrl: string | null = null;
 
     const loadEpub = async () => {
       try {
-        if (!mounted) return;
-
         setLoading(true);
         setError(null);
 
@@ -35,6 +42,7 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
 
         // 创建EPUB book实例（直接使用ArrayBuffer）
         const epubBook = ePub(arrayBuffer);
+        bookRef.current = epubBook;
 
         console.log('EPUB book instance created');
 
@@ -42,18 +50,29 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
         await epubBook.ready;
         console.log('EPUB book ready');
 
-        if (!mounted || !viewerRef.current) {
-          console.log('Component unmounted or ref not ready');
-          return;
+        if (!mounted) return;
+
+        // 等待viewer准备好
+        let attempts = 0;
+        while (!viewerRef.current && attempts < 50) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+          attempts++;
         }
+
+        if (!viewerRef.current) {
+          throw new Error('Viewer element not ready after 2.5 seconds');
+        }
+
+        if (!mounted) return;
 
         // 创建rendition
         const rend = epubBook.renderTo(viewerRef.current, {
           width: '100%',
-          height: '100%',
+          height: '600px',
           spread: 'none',
         });
 
+        renditionRef.current = rend;
         console.log('Rendition created');
 
         // 应用主题
@@ -74,14 +93,12 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
 
         if (!mounted) return;
 
-        setRendition(rend);
         setLoading(false);
 
         // 监听位置变化
         rend.on('relocated', (location: any) => {
           if (!location || !location.start) return;
 
-          // 计算进度
           try {
             const progress = epubBook.locations.percentageFromCfi(location.start.cfi);
             if (onProgressChange && progress !== undefined && progress !== null) {
@@ -92,7 +109,7 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
           }
         });
 
-        // 生成位置信息（用于进度计算）- 在后台异步执行
+        // 生成位置信息（在后台异步执行）
         epubBook.locations.generate(1600).then(() => {
           console.log('Locations generated');
         }).catch((err: any) => {
@@ -108,53 +125,52 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
       }
     };
 
-    loadEpub();
+    // 只在ready后加载
+    if (ready) {
+      loadEpub();
+    }
 
     return () => {
       mounted = false;
-      // 清理
-      if (rendition) {
+      if (renditionRef.current) {
         try {
-          rendition.destroy();
+          renditionRef.current.destroy();
         } catch (err) {
           console.warn('Error destroying rendition:', err);
         }
       }
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
-      }
     };
-  }, [file]);
+  }, [file, ready, fontSize, theme, onProgressChange]);
 
   // 更新主题
   useEffect(() => {
-    if (rendition) {
+    if (renditionRef.current) {
       if (theme === 'dark') {
-        rendition.themes.override('background', '#111827');
-        rendition.themes.override('color', '#f9fafb');
+        renditionRef.current.themes.override('background', '#111827');
+        renditionRef.current.themes.override('color', '#f9fafb');
       } else {
-        rendition.themes.override('background', '#ffffff');
-        rendition.themes.override('color', '#111827');
+        renditionRef.current.themes.override('background', '#ffffff');
+        renditionRef.current.themes.override('color', '#111827');
       }
     }
-  }, [theme, rendition]);
+  }, [theme]);
 
   // 更新字体大小
   useEffect(() => {
-    if (rendition) {
-      rendition.themes.fontSize(`${fontSize}px`);
+    if (renditionRef.current) {
+      renditionRef.current.themes.fontSize(`${fontSize}px`);
     }
-  }, [fontSize, rendition]);
+  }, [fontSize]);
 
   const goToNextPage = async () => {
-    if (rendition) {
-      await rendition.next();
+    if (renditionRef.current) {
+      await renditionRef.current.next();
     }
   };
 
   const goToPrevPage = async () => {
-    if (rendition) {
-      await rendition.prev();
+    if (renditionRef.current) {
+      await renditionRef.current.prev();
     }
   };
 
@@ -164,7 +180,7 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
       nextPage: goToNextPage,
       prevPage: goToPrevPage,
     };
-  }, [rendition]);
+  }, []);
 
   if (loading) {
     return (
@@ -192,8 +208,11 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
           }`}>
             <span className="text-3xl">❌</span>
           </div>
-          <p className={`text-base font-medium ${theme === 'dark' ? 'text-white/70' : 'text-gray-700'}`}>
+          <p className={`text-base font-medium mb-2 ${theme === 'dark' ? 'text-white/70' : 'text-gray-700'}`}>
             {error}
+          </p>
+          <p className={`text-sm ${theme === 'dark' ? 'text-white/50' : 'text-gray-500'}`}>
+            请确保文件是有效的EPUB格式
           </p>
         </div>
       </div>
@@ -202,11 +221,10 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
 
   return (
     <div
-      ref={viewerRef}
-      className={`w-full min-h-[600px] rounded-2xl shadow-2xl ${
+      ref={setViewerRef}
+      className={`w-full min-h-[600px] rounded-2xl shadow-2xl overflow-hidden ${
         theme === 'dark' ? 'bg-gray-800' : 'bg-white'
       }`}
-      style={{ fontSize: `${fontSize}px` }}
     />
   );
 }

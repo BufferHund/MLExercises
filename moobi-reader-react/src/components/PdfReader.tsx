@@ -53,20 +53,32 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
 
   // 渲染当前页
   useEffect(() => {
-    if (!pdf || !canvasRef.current) return;
+    if (!pdf || !canvasRef.current) {
+      console.log('Skipping render - pdf or canvas ref not ready', { pdf: !!pdf, canvas: !!canvasRef.current });
+      return;
+    }
 
     const renderPage = async () => {
       try {
+        const canvas = canvasRef.current;
+        if (!canvas) {
+          console.warn('Canvas ref became null');
+          return;
+        }
+
+        const context = canvas.getContext('2d');
+        if (!context) {
+          console.error('Failed to get 2D context');
+          setError('无法初始化Canvas渲染上下文');
+          return;
+        }
+
         const page = await pdf.getPage(currentPage);
-        const canvas = canvasRef.current!;
-        const context = canvas.getContext('2d')!;
 
         // 计算缩放比例
         const viewport = page.getViewport({ scale: 1.5 });
-        const scale = Math.min(
-          (canvas.parentElement?.clientWidth || 800) / viewport.width,
-          1.5
-        );
+        const parentWidth = canvas.parentElement?.clientWidth || 800;
+        const scale = Math.min(parentWidth / viewport.width, 1.5);
         const scaledViewport = page.getViewport({ scale });
 
         // 设置canvas尺寸
