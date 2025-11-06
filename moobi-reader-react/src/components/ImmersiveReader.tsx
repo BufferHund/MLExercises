@@ -70,6 +70,8 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
   const [showSearch, setShowSearch] = useState(false);
   const [isPageFlipping, setIsPageFlipping] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [bookScale, setBookScale] = useState(1.0); // 书页缩放比例，影响高度和宽度
+  const wheelDeltaAccumulator = useRef(0); // 滚轮delta累积器
 
   // Refs
   const touchStartX = useRef(0);
@@ -368,7 +370,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     };
   }, []);
 
-  // 滚轮翻页支持 - 仅用于自定义PDF/EPUB渲染模式
+  // 滚轮翻页/缩放支持
   useEffect(() => {
     // 原生PDF模式不需要滚轮翻页
     if (fileType === 'pdf' && pdfDisplayMode === 'native') return;
@@ -379,6 +381,28 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     const handleWheel = (e: WheelEvent) => {
       // 如果正在输入，不处理
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // 按住Ctrl键：调整书页大小
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+
+        // 累积滚轮delta，需要累积到500才触发一次缩放
+        wheelDeltaAccumulator.current += e.deltaY;
+
+        if (Math.abs(wheelDeltaAccumulator.current) >= 500) {
+          const scaleChange = wheelDeltaAccumulator.current > 0 ? -0.1 : 0.1;
+          const newScale = Math.max(0.5, Math.min(2.0, bookScale + scaleChange));
+
+          if (newScale !== bookScale) {
+            setBookScale(newScale);
+            console.log(`📏 Scale changed: ${newScale.toFixed(1)}x`);
+          }
+
+          // 重置累积器
+          wheelDeltaAccumulator.current = 0;
+        }
         return;
       }
 
@@ -396,12 +420,12 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       }
     };
 
-    container.addEventListener('wheel', handleWheel);
+    container.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
     };
-  }, [fileType, pdfDisplayMode]);
+  }, [fileType, pdfDisplayMode, bookScale]);
 
   // 自动隐藏控制栏
   useEffect(() => {
@@ -527,19 +551,17 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     }
   };
 
-  // 获取布局宽度 - 控制栏隐藏时使用更大宽度
+  // 获取布局宽度 - 固定宽度，不随工具栏变化
   const getLayoutWidth = () => {
-    const isExpanded = !showControls;
-
     switch (layoutMode) {
       case 'elegant':
-        return isExpanded ? 'max-w-5xl' : 'max-w-4xl'; // 控制栏隐藏时稍宽
+        return 'max-w-4xl'; // 优雅模式固定宽度
       case 'a4':
         return 'max-w-[210mm]'; // A4纸张模式固定
       case 'full':
         return 'max-w-full'; // 全宽模式
       default:
-        return isExpanded ? 'max-w-5xl' : 'max-w-4xl';
+        return 'max-w-4xl';
     }
   };
 
@@ -700,8 +722,14 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
             {renderReader()}
           </div>
         ) : (
-          /* 内容容器 - 居中显示，圆角 */
-          <div className={`${getLayoutWidth()} w-full mx-auto transition-none overflow-hidden rounded-2xl`}>
+          /* 内容容器 - 居中显示，圆角，支持缩放 */
+          <div
+            className={`${getLayoutWidth()} w-full mx-auto transition-transform duration-500 overflow-hidden rounded-2xl`}
+            style={{
+              transform: `scale(${bookScale})`,
+              transformOrigin: 'center top',
+            }}
+          >
             {renderReader()}
           </div>
         )}

@@ -107,6 +107,20 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
               console.log(`✅ [EPUB Effect #${effectId}] Fixed iframe sandbox to allow scripts`);
             }
           }
+
+          // 防止封面图片拉伸
+          const doc = contents.document;
+          if (doc) {
+            const style = doc.createElement('style');
+            style.textContent = `
+              img {
+                max-width: 100% !important;
+                height: auto !important;
+                object-fit: contain !important;
+              }
+            `;
+            doc.head.appendChild(style);
+          }
         });
 
         // 应用初始主题
