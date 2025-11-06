@@ -375,35 +375,23 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     const container = readerContainerRef.current;
     if (!container) return;
 
-    let wheelTimeout: ReturnType<typeof setTimeout> | null = null;
-
     const handleWheel = (e: WheelEvent) => {
       // 如果正在输入，不处理
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
 
-      // 防抖：避免过快翻页
-      if (wheelTimeout) return;
-
       const delta = e.deltaY;
 
       // 滚动阈值：需要一定的滚动量才触发翻页
-      if (Math.abs(delta) > 100) {
+      if (Math.abs(delta) > 50) {
         if (delta > 0) {
           // 向下滚动 = 下一页
           handleNextPage();
-          console.log('🖱️ Wheel: Next page');
         } else {
           // 向上滚动 = 上一页
           handlePrevPage();
-          console.log('🖱️ Wheel: Previous page');
         }
-
-        // 设置防抖
-        wheelTimeout = setTimeout(() => {
-          wheelTimeout = null;
-        }, 800);
       }
     };
 
@@ -411,20 +399,19 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
-      if (wheelTimeout) clearTimeout(wheelTimeout);
     };
   }, [fileType, pdfDisplayMode]);
 
   // 自动隐藏控制栏
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout> | undefined;
-    if (showControls && isFullscreen) {
+    if (showControls && !showSettings && !showBookmarkDialog && !showHighlightMenu && !showSearch) {
       timeout = setTimeout(() => setShowControls(false), 3000);
     }
     return () => {
       if (timeout) clearTimeout(timeout);
     };
-  }, [showControls, isFullscreen]);
+  }, [showControls, showSettings, showBookmarkDialog, showHighlightMenu, showSearch]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -602,7 +589,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
             <div className={`inline-flex items-center justify-center w-24 h-24 rounded-3xl mb-8 ${
               theme === 'dark' ? 'bg-white/5' : 'bg-gray-900/5'
             }`}>
-              <span className="text-4xl">📄</span>
+              <span className="text-4xl">?</span>
             </div>
             <h3 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
               暂不支持此格式
@@ -650,42 +637,18 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
             {/* 右侧控制 */}
             <div className="flex items-center gap-2">
-              {/* 主题快速切换 */}
+              {/* 主题快速切换 - 白天/黑夜 */}
               <div className="flex items-center gap-1 px-2 py-1 rounded-xl bg-black/5">
                 <button
-                  onClick={() => setTheme('light')}
-                  className={`p-1.5 rounded-lg transition-colors ${theme === 'light' ? 'bg-white shadow' : 'hover:bg-white/50'}`}
-                  title="浅色"
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    theme === 'dark'
+                      ? 'bg-gray-900 text-white shadow'
+                      : 'bg-white text-gray-900 shadow'
+                  }`}
+                  title="切换白天/黑夜模式"
                 >
-                  <span className="text-sm">☀️</span>
-                </button>
-                <button
-                  onClick={() => setTheme('dark')}
-                  className={`p-1.5 rounded-lg transition-colors ${theme === 'dark' ? 'bg-gray-900 shadow' : 'hover:bg-gray-900/20'}`}
-                  title="深色"
-                >
-                  <span className="text-sm">🌙</span>
-                </button>
-                <button
-                  onClick={() => setTheme('sepia')}
-                  className={`p-1.5 rounded-lg transition-colors ${theme === 'sepia' ? 'bg-[#f4ecd8] shadow' : 'hover:bg-[#f4ecd8]/50'}`}
-                  title="米色"
-                >
-                  <span className="text-sm">📖</span>
-                </button>
-                <button
-                  onClick={() => setTheme('green')}
-                  className={`p-1.5 rounded-lg transition-colors ${theme === 'green' ? 'bg-[#cce8cc] shadow' : 'hover:bg-[#cce8cc]/50'}`}
-                  title="绿色"
-                >
-                  <span className="text-sm">🌿</span>
-                </button>
-                <button
-                  onClick={() => setTheme('blue')}
-                  className={`p-1.5 rounded-lg transition-colors ${theme === 'blue' ? 'bg-[#e0f2ff] shadow' : 'hover:bg-[#e0f2ff]/50'}`}
-                  title="蓝色"
-                >
-                  <span className="text-sm">💙</span>
+                  {theme === 'dark' ? '夜间' : '白天'}
                 </button>
               </div>
 
@@ -716,12 +679,10 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
             {renderReader()}
           </div>
         ) : (
-          /* 纸张容器 - 有阴影效果 */
-          <div className={`${getLayoutWidth()} mx-auto ${layoutMode === 'full' ? 'px-0' : 'px-4 sm:px-6'} py-12 pb-32 transition-none`}>
-            <div className={`${themeColors.paper} ${themeColors.text} ${layoutMode === 'full' ? 'shadow-none' : 'shadow-2xl'} min-h-screen transition-colors duration-300`}>
-              <div className="px-8 py-12">
-                {renderReader()}
-              </div>
+          /* 内容容器 - 直接渲染，无外边框 */
+          <div className={`${getLayoutWidth()} mx-auto transition-none`}>
+            <div className={`${themeColors.paper} ${themeColors.text} min-h-screen transition-colors duration-300`}>
+              {renderReader()}
             </div>
           </div>
         )}
@@ -737,16 +698,16 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
           {/* 进度条 */}
           <div className="px-6 pt-4">
             <div className="flex items-center gap-4">
-              <span className={`text-xs font-semibold min-w-[3rem] text-right ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
+              <span className={`text-xs font-semibold min-w-[3rem] text-right ${themeColors.text} opacity-70`}>
                 {progress}%
               </span>
-              <div className={`flex-1 h-2 rounded-full overflow-hidden ${theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10'}`}>
+              <div className={`flex-1 h-2 rounded-full overflow-hidden ${themeColors.hover}`}>
                 <div
-                  className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-300"
+                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <span className={`text-xs font-semibold min-w-[3rem] ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
+              <span className={`text-xs font-semibold min-w-[3rem] ${themeColors.text} opacity-70`}>
                 100%
               </span>
             </div>
@@ -776,18 +737,18 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowSearch(!showSearch)}
-                className={`p-2.5 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors ${showSearch ? (theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10') : ''}`}
+                className={`p-2.5 ${themeColors.hover} rounded-xl transition-colors ${showSearch ? themeColors.hover : ''}`}
                 title="搜索 (Ctrl+F)"
               >
-                <Search className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} />
+                <Search className={`w-5 h-5 ${themeColors.text}`} />
               </button>
 
               <button
                 onClick={handleAddBookmark}
-                className={`p-2.5 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors`}
+                className={`p-2.5 ${themeColors.hover} rounded-xl transition-colors`}
                 title="添加书签"
               >
-                <Bookmark className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} />
+                <Bookmark className={`w-5 h-5 ${themeColors.text}`} />
               </button>
 
               <button
@@ -795,54 +756,72 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                   if (selectedText) {
                     setShowHighlightMenu(true);
                   } else {
-                    alert('请先选择要高亮的文本');
+                    console.log('请先选择要高亮的文本');
                   }
                 }}
-                className={`p-2.5 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors ${showHighlightMenu ? (theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10') : ''}`}
+                className={`p-2.5 ${themeColors.hover} rounded-xl transition-colors ${showHighlightMenu ? themeColors.hover : ''}`}
                 title="高亮标注"
               >
-                <Highlighter className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} />
+                <Highlighter className={`w-5 h-5 ${themeColors.text}`} />
               </button>
 
-              {/* EPUB/TXT字体控制 */}
+              {/* EPUB/TXT字体控制 - 12、16、20、24、28 */}
               {(fileType === 'epub' || fileType === 'txt' || fileType === 'md') && (
-                <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10'}`}>
+                <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${themeColors.hover}`}>
                   <button
-                    onClick={() => setFontSize(Math.max(12, fontSize - 2))}
-                    className={`text-sm font-bold transition-colors ${theme === 'dark' ? 'text-white hover:text-white/70' : 'text-gray-900 hover:text-gray-600'}`}
-                    title="减小字号"
+                    onClick={() => setFontSize(12)}
+                    className={`px-2 py-1 text-xs font-medium transition-colors rounded ${fontSize === 12 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="最小"
                   >
-                    A-
+                    12
                   </button>
-                  <span className={`text-xs font-semibold min-w-[2rem] text-center ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`}>
-                    {fontSize}
-                  </span>
                   <button
-                    onClick={() => setFontSize(Math.min(32, fontSize + 2))}
-                    className={`text-lg font-bold transition-colors ${theme === 'dark' ? 'text-white hover:text-white/70' : 'text-gray-900 hover:text-gray-600'}`}
-                    title="增大字号"
+                    onClick={() => setFontSize(16)}
+                    className={`px-2 py-1 text-sm font-medium transition-colors rounded ${fontSize === 16 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="小"
                   >
-                    A+
+                    16
+                  </button>
+                  <button
+                    onClick={() => setFontSize(20)}
+                    className={`px-2 py-1 text-base font-medium transition-colors rounded ${fontSize === 20 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="中"
+                  >
+                    20
+                  </button>
+                  <button
+                    onClick={() => setFontSize(24)}
+                    className={`px-2 py-1 text-lg font-medium transition-colors rounded ${fontSize === 24 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="大"
+                  >
+                    24
+                  </button>
+                  <button
+                    onClick={() => setFontSize(28)}
+                    className={`px-2 py-1 text-xl font-medium transition-colors rounded ${fontSize === 28 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="最大"
+                  >
+                    28
                   </button>
                 </div>
               )}
 
               {/* PDF缩放控制 */}
-              {fileType === 'pdf' && (
-                <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10'}`}>
+              {fileType === 'pdf' && pdfDisplayMode === 'custom' && (
+                <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${themeColors.hover}`}>
                   <button
                     onClick={() => setPdfZoom(Math.max(50, pdfZoom - 10))}
-                    className={`p-1 transition-colors ${theme === 'dark' ? 'text-white hover:text-white/70' : 'text-gray-900 hover:text-gray-600'}`}
+                    className={`p-1 transition-colors ${themeColors.text}`}
                     title="缩小"
                   >
                     <ZoomOut className="w-4 h-4" />
                   </button>
-                  <span className={`text-xs font-semibold min-w-[3rem] text-center ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`}>
+                  <span className={`text-xs font-semibold min-w-[3rem] text-center ${themeColors.text} opacity-70`}>
                     {pdfZoom}%
                   </span>
                   <button
                     onClick={() => setPdfZoom(Math.min(200, pdfZoom + 10))}
-                    className={`p-1 transition-colors ${theme === 'dark' ? 'text-white hover:text-white/70' : 'text-gray-900 hover:text-gray-600'}`}
+                    className={`p-1 transition-colors ${themeColors.text}`}
                     title="放大"
                   >
                     <ZoomIn className="w-4 h-4" />
@@ -852,10 +831,10 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className={`p-2.5 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors ${showSettings ? (theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10') : ''}`}
+                className={`p-2.5 ${themeColors.hover} rounded-xl transition-colors ${showSettings ? themeColors.hover : ''}`}
                 title="设置"
               >
-                <Settings className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} />
+                <Settings className={`w-5 h-5 ${themeColors.text}`} />
               </button>
             </div>
           </div>
@@ -916,7 +895,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
             title={pdfDisplayMode === 'native' ? '切换到自定义渲染' : '切换到浏览器原生'}
           >
             <span className={`text-xs font-medium ${themeColors.text}`}>
-              {pdfDisplayMode === 'native' ? '🌐 原生' : '🎨 自定义'}
+              {pdfDisplayMode === 'native' ? '原生' : '自定义'}
             </span>
           </button>
         </div>
@@ -959,7 +938,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                         : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                     }`}
                   >
-                    ☀️ 浅色
+                    浅色
                   </button>
                   <button
                     onClick={() => setTheme('dark')}
@@ -969,7 +948,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                         : 'bg-gray-800 text-white hover:bg-gray-700'
                     }`}
                   >
-                    🌙 深色
+                    深色
                   </button>
                   <button
                     onClick={() => setTheme('sepia')}
@@ -979,7 +958,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                         : 'bg-[#f4ecd8] text-[#5c4a2f] hover:bg-[#ebe2ca]'
                     }`}
                   >
-                    📖 米色
+                    米色
                   </button>
                   <button
                     onClick={() => setTheme('green')}
@@ -989,7 +968,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                         : 'bg-[#cce8cc] text-[#2d4a2d] hover:bg-[#b8deb8]'
                     }`}
                   >
-                    🌿 绿色
+                    绿色
                   </button>
                   <button
                     onClick={() => setTheme('blue')}
@@ -999,7 +978,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                         : 'bg-[#e0f2ff] text-[#1e3a5f] hover:bg-[#d0e8f7]'
                     }`}
                   >
-                    💙 蓝色
+                    蓝色
                   </button>
                 </div>
               </div>
@@ -1018,7 +997,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                         : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                     }`}
                   >
-                    📚 优雅
+                    优雅
                   </button>
                   <button
                     onClick={() => setLayoutMode('a4')}
@@ -1028,7 +1007,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                         : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                     }`}
                   >
-                    📄 A4
+                    A4
                   </button>
                   <button
                     onClick={() => setLayoutMode('full')}
@@ -1038,7 +1017,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                         : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                     }`}
                   >
-                    🖥️ 全屏
+                    全屏
                   </button>
                 </div>
               </div>
@@ -1058,7 +1037,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                           : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                       }`}
                     >
-                      📄 单页
+                      单页
                     </button>
                     <button
                       onClick={() => setPageMode('double')}
@@ -1068,7 +1047,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                           : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                       }`}
                     >
-                      📖 双页
+                      双页
                     </button>
                   </div>
                 </div>
@@ -1087,7 +1066,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                       : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                   }`}
                 >
-                  {zenMode ? '🧘 已启用 Zen 模式' : '🧘 启用 Zen 模式 (Z)'}
+                  {zenMode ? '已启用 Zen 模式' : '启用 Zen 模式 (Z)'}
                 </button>
                 <p className={`text-xs mt-2 ${theme === 'dark' ? 'text-white/40' : 'text-gray-400'}`}>
                   隐藏所有控制栏，专注阅读
