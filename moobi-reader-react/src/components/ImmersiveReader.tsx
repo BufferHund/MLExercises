@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { X, ChevronLeft, ChevronRight, Settings, Bookmark, ZoomIn, ZoomOut, Search, Highlighter } from 'lucide-react';
 import PdfReader from './PdfReader';
 import EpubReader from './EpubReader';
@@ -534,19 +534,34 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
   const themeColors = getThemeColors();
 
+  // 记忆化PDF URL，避免重复创建导致重载
+  const pdfUrl = useMemo(() => {
+    if (fileType === 'pdf' && pdfDisplayMode === 'native') {
+      return URL.createObjectURL(file);
+    }
+    return null;
+  }, [file, fileType, pdfDisplayMode]);
+
+  // 清理PDF URL
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
+
   const renderReader = () => {
     switch (fileType.toLowerCase()) {
       case 'pdf':
         if (pdfDisplayMode === 'native') {
           // 使用浏览器原生PDF查看器
-          const url = URL.createObjectURL(file);
-
           // 计算高度：工具栏显示时减去控制栏高度，隐藏时占满全屏
           const height = showControls ? 'calc(100vh - 180px)' : '100vh';
 
           return (
             <iframe
-              src={url}
+              src={pdfUrl || ''}
               className="w-full border-0 transition-all duration-300"
               style={{ height }}
               title={fileName}
@@ -672,18 +687,16 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       </div>
 
       {/* 主阅读区域 */}
-      <div ref={readerContainerRef} className="flex-1 overflow-y-auto">
+      <div ref={readerContainerRef} className={`flex-1 overflow-y-auto flex items-center justify-center ${themeColors.bg} ${themeColors.text} transition-colors duration-300`}>
         {/* 原生PDF模式 - 完全占满 */}
         {fileType === 'pdf' && pdfDisplayMode === 'native' ? (
           <div className="w-full h-full">
             {renderReader()}
           </div>
         ) : (
-          /* 内容容器 - 直接渲染，无外边框 */
-          <div className={`${getLayoutWidth()} mx-auto transition-none`}>
-            <div className={`${themeColors.paper} ${themeColors.text} min-h-screen transition-colors duration-300`}>
-              {renderReader()}
-            </div>
+          /* 内容容器 - 居中显示，无边框 */
+          <div className={`${getLayoutWidth()} w-full mx-auto transition-none`}>
+            {renderReader()}
           </div>
         )}
       </div>
@@ -983,7 +996,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                 </div>
               </div>
 
-              {/* 布局模式 */}
+              {/* 布局模式 - PDF才有A4选项 */}
               <div>
                 <label className={`text-sm font-medium mb-2 block ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
                   布局模式
@@ -999,16 +1012,18 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                   >
                     优雅
                   </button>
-                  <button
-                    onClick={() => setLayoutMode('a4')}
-                    className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
-                      layoutMode === 'a4'
-                        ? 'bg-gradient-to-r from-primary to-secondary text-white'
-                        : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                    }`}
-                  >
-                    A4
-                  </button>
+                  {fileType === 'pdf' && (
+                    <button
+                      onClick={() => setLayoutMode('a4')}
+                      className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${
+                        layoutMode === 'a4'
+                          ? 'bg-gradient-to-r from-primary to-secondary text-white'
+                          : theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                      }`}
+                    >
+                      A4
+                    </button>
+                  )}
                   <button
                     onClick={() => setLayoutMode('full')}
                     className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all ${

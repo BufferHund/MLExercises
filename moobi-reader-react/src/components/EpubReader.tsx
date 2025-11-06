@@ -265,14 +265,14 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
       {/* Viewer div - always rendered */}
       <div
         ref={viewerRef}
-        className={`w-full min-h-[600px] rounded-2xl shadow-2xl overflow-hidden ${
+        className={`w-full min-h-[600px] overflow-hidden ${
           theme === 'dark' ? 'bg-gray-800' : 'bg-white'
         }`}
       />
 
       {/* Loading overlay */}
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
           <div className="text-center">
             <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 ${
               theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10'
@@ -288,7 +288,7 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
 
       {/* Error overlay */}
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
           <div className="text-center max-w-md">
             <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 ${
               theme === 'dark' ? 'bg-red-500/10' : 'bg-red-500/10'

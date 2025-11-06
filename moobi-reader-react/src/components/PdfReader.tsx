@@ -328,7 +328,7 @@ export default function PdfReader({ file, theme, zoom = 100, onPageChange, onPro
     <div ref={containerRef} className="flex flex-col items-center justify-center w-full px-4">
       <canvas
         ref={canvasRef}
-        className={`max-w-full h-auto rounded-2xl shadow-2xl mb-6 ${
+        className={`max-w-full h-auto mb-6 ${
           theme === 'dark' ? 'bg-white' : 'bg-white'
         }`}
       />

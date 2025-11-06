@@ -71,9 +71,9 @@ export default function TextReader({ file, fontSize, theme, onProgressChange }: 
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full mx-auto">
       <div
-        className={`p-8 rounded-2xl shadow-2xl ${
+        className={`p-8 ${
           theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
         }`}
         style={{ fontSize: `${fontSize}px`, lineHeight: 1.8 }}
