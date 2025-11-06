@@ -58,6 +58,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
   const [zenMode, setZenMode] = useState(false);
   const [layoutMode, setLayoutMode] = useState<'elegant' | 'a4' | 'full'>('elegant');
   const [pageMode, setPageMode] = useState<'single' | 'double'>('single');
+  const [pdfDisplayMode, setPdfDisplayMode] = useState<'native' | 'custom'>('native'); // PDF显示模式
 
   // 新增功能状态
   const [showBookmarkDialog, setShowBookmarkDialog] = useState(false);
@@ -366,6 +367,54 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     };
   }, []);
 
+  // 滚轮翻页支持 - 仅用于自定义PDF/EPUB渲染模式
+  useEffect(() => {
+    // 原生PDF模式不需要滚轮翻页
+    if (fileType === 'pdf' && pdfDisplayMode === 'native') return;
+
+    const container = readerContainerRef.current;
+    if (!container) return;
+
+    let wheelTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const handleWheel = (e: WheelEvent) => {
+      // 如果正在输入，不处理
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // 防抖：避免过快翻页
+      if (wheelTimeout) return;
+
+      const delta = e.deltaY;
+
+      // 滚动阈值：需要一定的滚动量才触发翻页
+      if (Math.abs(delta) > 100) {
+        if (delta > 0) {
+          // 向下滚动 = 下一页
+          handleNextPage();
+          console.log('🖱️ Wheel: Next page');
+        } else {
+          // 向上滚动 = 上一页
+          handlePrevPage();
+          console.log('🖱️ Wheel: Previous page');
+        }
+
+        // 设置防抖
+        wheelTimeout = setTimeout(() => {
+          wheelTimeout = null;
+        }, 800);
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel);
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+      if (wheelTimeout) clearTimeout(wheelTimeout);
+    };
+  }, [fileType, pdfDisplayMode]);
+
   // 自动隐藏控制栏
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -501,15 +550,33 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
   const renderReader = () => {
     switch (fileType.toLowerCase()) {
       case 'pdf':
-        return (
-          <PdfReader
-            file={file}
-            theme={theme}
-            zoom={pdfZoom}
-            onPageChange={handlePageChange}
-            onProgressChange={handleProgressChange}
-          />
-        );
+        if (pdfDisplayMode === 'native') {
+          // 使用浏览器原生PDF查看器
+          const url = URL.createObjectURL(file);
+
+          // 计算高度：工具栏显示时减去控制栏高度，隐藏时占满全屏
+          const height = showControls ? 'calc(100vh - 180px)' : '100vh';
+
+          return (
+            <iframe
+              src={url}
+              className="w-full border-0 transition-all duration-300"
+              style={{ height }}
+              title={fileName}
+            />
+          );
+        } else {
+          // 使用自定义PDF渲染组件
+          return (
+            <PdfReader
+              file={file}
+              theme={theme}
+              zoom={pdfZoom}
+              onPageChange={handlePageChange}
+              onProgressChange={handleProgressChange}
+            />
+          );
+        }
       case 'epub':
         return (
           <EpubReader
@@ -643,14 +710,21 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
       {/* 主阅读区域 */}
       <div ref={readerContainerRef} className="flex-1 overflow-y-auto">
-        {/* 纸张容器 - 有阴影效果 */}
-        <div className={`${getLayoutWidth()} mx-auto ${layoutMode === 'full' ? 'px-0' : 'px-4 sm:px-6'} py-12 pb-32 transition-none`}>
-          <div className={`${themeColors.paper} ${themeColors.text} ${layoutMode === 'full' ? 'shadow-none' : 'shadow-2xl'} min-h-screen transition-colors duration-300`}>
-            <div className="px-8 py-12">
-              {renderReader()}
+        {/* 原生PDF模式 - 完全占满 */}
+        {fileType === 'pdf' && pdfDisplayMode === 'native' ? (
+          <div className="w-full h-full">
+            {renderReader()}
+          </div>
+        ) : (
+          /* 纸张容器 - 有阴影效果 */
+          <div className={`${getLayoutWidth()} mx-auto ${layoutMode === 'full' ? 'px-0' : 'px-4 sm:px-6'} py-12 pb-32 transition-none`}>
+            <div className={`${themeColors.paper} ${themeColors.text} ${layoutMode === 'full' ? 'shadow-none' : 'shadow-2xl'} min-h-screen transition-colors duration-300`}>
+              <div className="px-8 py-12">
+                {renderReader()}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 底部控制栏 */}
@@ -830,6 +904,21 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
               <Settings className={`w-4 h-4 ${themeColors.text}`} />
             </button>
           </div>
+        </div>
+      )}
+
+      {/* PDF显示模式切换按钮 - 左下角 */}
+      {fileType === 'pdf' && !zenMode && (
+        <div className={`fixed bottom-6 left-6 z-50 ${themeColors.controlBg} backdrop-blur-xl rounded-2xl shadow-2xl border ${themeColors.border} p-3 transition-all duration-300`}>
+          <button
+            onClick={() => setPdfDisplayMode(pdfDisplayMode === 'native' ? 'custom' : 'native')}
+            className={`p-2 ${themeColors.hover} rounded-xl transition-colors flex items-center gap-2`}
+            title={pdfDisplayMode === 'native' ? '切换到自定义渲染' : '切换到浏览器原生'}
+          >
+            <span className={`text-xs font-medium ${themeColors.text}`}>
+              {pdfDisplayMode === 'native' ? '🌐 原生' : '🎨 自定义'}
+            </span>
+          </button>
         </div>
       )}
 
