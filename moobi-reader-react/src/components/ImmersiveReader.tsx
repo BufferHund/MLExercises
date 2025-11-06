@@ -370,9 +370,9 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     };
   }, []);
 
-  // 滚轮翻页/缩放支持
+  // 滚轮缩放支持 - 只用于调整书页大小
   useEffect(() => {
-    // 原生PDF模式不需要滚轮翻页
+    // 原生PDF模式不使用滚轮缩放
     if (fileType === 'pdf' && pdfDisplayMode === 'native') return;
 
     const container = readerContainerRef.current;
@@ -384,39 +384,23 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         return;
       }
 
-      // 按住Ctrl键：调整书页大小
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
+      // 滚轮直接调整书页大小，无需按Ctrl
+      e.preventDefault();
 
-        // 累积滚轮delta，需要累积到500才触发一次缩放
-        wheelDeltaAccumulator.current += e.deltaY;
+      // 累积滚轮delta，需要累积到500才触发一次缩放
+      wheelDeltaAccumulator.current += e.deltaY;
 
-        if (Math.abs(wheelDeltaAccumulator.current) >= 500) {
-          const scaleChange = wheelDeltaAccumulator.current > 0 ? -0.1 : 0.1;
-          const newScale = Math.max(0.5, Math.min(2.0, bookScale + scaleChange));
+      if (Math.abs(wheelDeltaAccumulator.current) >= 500) {
+        const scaleChange = wheelDeltaAccumulator.current > 0 ? -0.1 : 0.1;
+        const newScale = Math.max(0.5, Math.min(2.0, bookScale + scaleChange));
 
-          if (newScale !== bookScale) {
-            setBookScale(newScale);
-            console.log(`📏 Scale changed: ${newScale.toFixed(1)}x`);
-          }
-
-          // 重置累积器
-          wheelDeltaAccumulator.current = 0;
+        if (newScale !== bookScale) {
+          setBookScale(newScale);
+          console.log(`📏 Scale changed: ${newScale.toFixed(1)}x`);
         }
-        return;
-      }
 
-      const delta = e.deltaY;
-
-      // 滚动阈值：需要一定的滚动量才触发翻页
-      if (Math.abs(delta) > 50) {
-        if (delta > 0) {
-          // 向下滚动 = 下一页
-          handleNextPage();
-        } else {
-          // 向上滚动 = 上一页
-          handlePrevPage();
-        }
+        // 重置累积器
+        wheelDeltaAccumulator.current = 0;
       }
     };
 
@@ -601,6 +585,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
           // 使用自定义PDF渲染组件
           return (
             <PdfReader
+              key={`pdf-${bookScale}`}
               file={file}
               theme={theme}
               zoom={pdfZoom}
@@ -612,6 +597,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       case 'epub':
         return (
           <EpubReader
+            key={`epub-${bookScale}`}
             file={file}
             fontSize={fontSize}
             theme={theme}
@@ -622,6 +608,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       case 'md':
         return (
           <TextReader
+            key={`text-${bookScale}`}
             file={file}
             fontSize={fontSize}
             theme={theme}
