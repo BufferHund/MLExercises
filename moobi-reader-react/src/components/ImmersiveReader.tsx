@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { X, ChevronLeft, ChevronRight, Settings, Moon, Sun, Bookmark, ZoomIn, ZoomOut } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { X, ChevronLeft, ChevronRight, Settings, Moon, Sun, Bookmark, ZoomIn, ZoomOut, Search, Highlighter } from 'lucide-react';
 import PdfReader from './PdfReader';
 import EpubReader from './EpubReader';
 import TextReader from './TextReader';
@@ -11,11 +11,36 @@ interface ImmersiveReaderProps {
   onClose: () => void;
 }
 
+interface BookData {
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  lastOpened: number;
+  currentPage?: number;
+  totalPages?: number;
+  progress: number;
+  readingTime: number;
+  addedDate: number;
+}
+
 interface BookmarkData {
+  id: string;
   fileName: string;
   page?: number;
   progress: number;
   timestamp: number;
+  note?: string;
+  color?: string;
+}
+
+interface HighlightData {
+  id: string;
+  fileName: string;
+  page?: number;
+  text: string;
+  color: string;
+  timestamp: number;
+  note?: string;
 }
 
 export default function ImmersiveReader({ file, fileName, fileType, onClose }: ImmersiveReaderProps) {
@@ -26,13 +51,89 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
   const [progress, setProgress] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [pdfZoom, setPdfZoom] = useState(100); // PDF缩放百分比
+  const [pdfZoom, setPdfZoom] = useState(100);
   const [showSettings, setShowSettings] = useState(false);
   const [bookmarks, setBookmarks] = useState<BookmarkData[]>([]);
   const [showBookmarks, setShowBookmarks] = useState(false);
+
+  // 新增功能状态
+  const [showBookmarkDialog, setShowBookmarkDialog] = useState(false);
+  const [bookmarkNote, setBookmarkNote] = useState('');
+  const [bookmarkColor, setBookmarkColor] = useState('#FFD700');
+  const [showHighlightMenu, setShowHighlightMenu] = useState(false);
+  const [selectedText, setSelectedText] = useState('');
+  const [highlightColor, setHighlightColor] = useState('#FFFF00');
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Refs
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const readerContainerRef = useRef<HTMLDivElement>(null);
+  const sessionStartTime = useRef(Date.now());
+  const readingTimeInterval = useRef<NodeJS.Timeout | null>(null);
+
+  // 保存阅读历史
+  const saveReadingHistory = useCallback(() => {
+    const elapsed = Math.floor((Date.now() - sessionStartTime.current) / 1000);
+
+    const bookData: BookData = {
+      fileName,
+      fileType,
+      fileSize: file.size,
+      lastOpened: Date.now(),
+      currentPage: fileType === 'pdf' ? currentPage : undefined,
+      totalPages: fileType === 'pdf' ? totalPages : undefined,
+      progress,
+      readingTime: elapsed,
+      addedDate: Date.now(),
+    };
+
+    // 获取现有书架数据
+    const saved = localStorage.getItem('moobi-bookshelf');
+    let bookshelf: BookData[] = [];
+    if (saved) {
+      try {
+        bookshelf = JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to load bookshelf:', e);
+      }
+    }
+
+    // 更新或添加当前书籍
+    const existingIndex = bookshelf.findIndex(b => b.fileName === fileName);
+    if (existingIndex >= 0) {
+      // 累加阅读时间
+      bookData.readingTime += bookshelf[existingIndex].readingTime || 0;
+      bookData.addedDate = bookshelf[existingIndex].addedDate;
+      bookshelf[existingIndex] = bookData;
+    } else {
+      bookshelf.unshift(bookData);
+    }
+
+    localStorage.setItem('moobi-bookshelf', JSON.stringify(bookshelf));
+    console.log('📚 Reading history saved:', bookData);
+  }, [fileName, fileType, file.size, currentPage, totalPages, progress]);
+
+  // 阅读时间追踪
+  useEffect(() => {
+    sessionStartTime.current = Date.now();
+
+    // 每30秒保存一次进度
+    const interval = setInterval(() => {
+      saveReadingHistory();
+    }, 30000);
+
+    readingTimeInterval.current = interval;
+
+    // 组件卸载时保存
+    return () => {
+      if (readingTimeInterval.current) {
+        clearInterval(readingTimeInterval.current);
+      }
+      saveReadingHistory();
+    };
+  }, [saveReadingHistory]);
 
   // 加载书签
   useEffect(() => {
@@ -52,21 +153,99 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     localStorage.setItem('moobi-bookmarks', JSON.stringify(newBookmarks));
   };
 
-  // 添加书签
+  // 添加书签 - 显示对话框
   const handleAddBookmark = () => {
+    setShowBookmarkDialog(true);
+    setBookmarkNote('');
+    setBookmarkColor('#FFD700');
+  };
+
+  // 保存书签（带笔记）
+  const saveBookmarkWithNote = () => {
     const bookmark: BookmarkData = {
+      id: `bookmark-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       fileName,
       page: fileType === 'pdf' ? currentPage : undefined,
       progress,
       timestamp: Date.now(),
+      note: bookmarkNote.trim() || undefined,
+      color: bookmarkColor,
     };
 
-    const newBookmarks = [bookmark, ...bookmarks.filter(b => b.fileName !== fileName)];
+    const newBookmarks = [bookmark, ...bookmarks];
     saveBookmarks(newBookmarks);
 
-    console.log('📌 Bookmark added:', bookmark);
-    alert(`书签已添加！\n文件: ${fileName}\n${fileType === 'pdf' ? `页码: ${currentPage}/${totalPages}` : `进度: ${progress}%`}`);
+    // 同时保存到全局书签列表
+    const globalBookmarks = localStorage.getItem('moobi-all-bookmarks');
+    let allBookmarks: BookmarkData[] = [];
+    if (globalBookmarks) {
+      try {
+        allBookmarks = JSON.parse(globalBookmarks);
+      } catch (e) {
+        console.error('Failed to load global bookmarks:', e);
+      }
+    }
+    allBookmarks.unshift(bookmark);
+    localStorage.setItem('moobi-all-bookmarks', JSON.stringify(allBookmarks));
+
+    console.log('📌 Bookmark saved with note:', bookmark);
+    setShowBookmarkDialog(false);
   };
+
+  // 加载高亮
+  const [highlights, setHighlights] = useState<HighlightData[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('moobi-all-highlights');
+    if (saved) {
+      try {
+        setHighlights(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to load highlights:', e);
+      }
+    }
+  }, []);
+
+  // 保存高亮
+  const saveHighlight = (text: string, color: string) => {
+    const highlight: HighlightData = {
+      id: `highlight-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      fileName,
+      page: fileType === 'pdf' ? currentPage : undefined,
+      text,
+      color,
+      timestamp: Date.now(),
+    };
+
+    const newHighlights = [highlight, ...highlights];
+    setHighlights(newHighlights);
+    localStorage.setItem('moobi-all-highlights', JSON.stringify(newHighlights));
+
+    console.log('🖍️ Highlight saved:', highlight);
+    setShowHighlightMenu(false);
+    setSelectedText('');
+  };
+
+  // 文本选择处理
+  useEffect(() => {
+    const handleTextSelection = () => {
+      const selection = window.getSelection();
+      const text = selection?.toString().trim();
+
+      if (text && text.length > 0) {
+        setSelectedText(text);
+        setShowHighlightMenu(true);
+      }
+    };
+
+    document.addEventListener('mouseup', handleTextSelection);
+    document.addEventListener('touchend', handleTextSelection);
+
+    return () => {
+      document.removeEventListener('mouseup', handleTextSelection);
+      document.removeEventListener('touchend', handleTextSelection);
+    };
+  }, []);
 
   // 键盘导航
   useEffect(() => {
@@ -106,14 +285,24 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
           break;
         case 'f':
         case 'F':
-          if (!e.ctrlKey && !e.metaKey) {
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            setShowSearch(!showSearch);
+            console.log('⌨️ Keyboard: Toggle search (Ctrl+F)');
+          } else {
             e.preventDefault();
             toggleFullscreen();
-            console.log('⌨️ Keyboard: Toggle fullscreen');
+            console.log('⌨️ Keyboard: Toggle fullscreen (F)');
           }
           break;
         case 'Escape':
-          if (showSettings) {
+          if (showSearch) {
+            setShowSearch(false);
+          } else if (showBookmarkDialog) {
+            setShowBookmarkDialog(false);
+          } else if (showHighlightMenu) {
+            setShowHighlightMenu(false);
+          } else if (showSettings) {
             setShowSettings(false);
           } else if (showBookmarks) {
             setShowBookmarks(false);
@@ -126,7 +315,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [fileType, totalPages, isFullscreen, showSettings, showBookmarks]);
+  }, [fileType, totalPages, isFullscreen, showSettings, showBookmarks, showSearch, showBookmarkDialog, showHighlightMenu]);
 
   // 触摸/滑动支持
   useEffect(() => {
@@ -387,11 +576,33 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
             {/* 功能控制 */}
             <div className="flex items-center gap-3">
               <button
+                onClick={() => setShowSearch(!showSearch)}
+                className={`p-2.5 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors ${showSearch ? (theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10') : ''}`}
+                title="搜索 (Ctrl+F)"
+              >
+                <Search className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} />
+              </button>
+
+              <button
                 onClick={handleAddBookmark}
                 className={`p-2.5 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors`}
                 title="添加书签"
               >
                 <Bookmark className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} />
+              </button>
+
+              <button
+                onClick={() => {
+                  if (selectedText) {
+                    setShowHighlightMenu(true);
+                  } else {
+                    alert('请先选择要高亮的文本');
+                  }
+                }}
+                className={`p-2.5 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-900/10'} rounded-xl transition-colors ${showHighlightMenu ? (theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10') : ''}`}
+                title="高亮标注"
+              >
+                <Highlighter className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} />
               </button>
 
               {/* EPUB/TXT字体控制 */}
@@ -540,6 +751,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                   <p>Home: 第一页</p>
                   <p>End: 最后一页</p>
                   <p>F: 全屏切换</p>
+                  <p>Ctrl+F: 搜索</p>
                   <p>ESC: 退出全屏/关闭面板</p>
                   <p>滑动: 左右滑动翻页</p>
                 </div>
@@ -555,6 +767,187 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
               关闭
             </button>
           </div>
+        </div>
+      )}
+
+      {/* 书签对话框 */}
+      {showBookmarkDialog && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center" onClick={() => setShowBookmarkDialog(false)}>
+          <div
+            className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-3xl shadow-2xl p-6 max-w-md w-full mx-4`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className={`text-xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              添加书签
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <p className={`text-sm mb-2 ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`}>
+                  {fileName}
+                </p>
+                <p className={`text-sm font-medium ${theme === 'dark' ? 'text-white/80' : 'text-gray-800'}`}>
+                  {fileType === 'pdf' ? `第 ${currentPage}/${totalPages} 页` : `进度: ${progress}%`}
+                </p>
+              </div>
+
+              <div>
+                <label className={`text-sm font-medium mb-2 block ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
+                  书签笔记 (可选)
+                </label>
+                <textarea
+                  value={bookmarkNote}
+                  onChange={(e) => setBookmarkNote(e.target.value)}
+                  placeholder="记录你的想法..."
+                  className={`w-full px-4 py-3 rounded-xl border resize-none ${
+                    theme === 'dark'
+                      ? 'bg-white/10 border-white/20 text-white placeholder-white/40'
+                      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
+                  } focus:outline-none focus:ring-2 focus:ring-primary`}
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className={`text-sm font-medium mb-2 block ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
+                  书签颜色
+                </label>
+                <div className="flex gap-2">
+                  {['#FFD700', '#FF6B6B', '#4ECDC4', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3'].map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setBookmarkColor(color)}
+                      className={`w-10 h-10 rounded-xl transition-all ${
+                        bookmarkColor === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : 'hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowBookmarkDialog(false)}
+                className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${
+                  theme === 'dark' ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                }`}
+              >
+                取消
+              </button>
+              <button
+                onClick={saveBookmarkWithNote}
+                className="flex-1 py-3 px-4 rounded-xl font-medium bg-gradient-to-r from-primary to-secondary text-white hover:shadow-lg transition-all"
+              >
+                保存书签
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 高亮菜单 */}
+      {showHighlightMenu && selectedText && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center" onClick={() => setShowHighlightMenu(false)}>
+          <div
+            className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-3xl shadow-2xl p-6 max-w-md w-full mx-4`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              高亮标注
+            </h3>
+
+            <div className="space-y-4">
+              <div className={`p-4 rounded-xl ${theme === 'dark' ? 'bg-white/10' : 'bg-gray-100'}`}>
+                <p className={`text-sm font-medium mb-2 ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`}>
+                  选中的文本:
+                </p>
+                <p className={`text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'} line-clamp-3`}>
+                  {selectedText}
+                </p>
+              </div>
+
+              <div>
+                <label className={`text-sm font-medium mb-2 block ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
+                  选择颜色
+                </label>
+                <div className="grid grid-cols-5 gap-2">
+                  {['#FFFF00', '#FFD700', '#FF6B6B', '#4ECDC4', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3', '#FFA07A', '#98D8C8'].map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setHighlightColor(color)}
+                      className={`h-12 rounded-xl transition-all ${
+                        highlightColor === color ? 'ring-2 ring-offset-2 ring-primary scale-110' : 'hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowHighlightMenu(false)}
+                className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${
+                  theme === 'dark' ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                }`}
+              >
+                取消
+              </button>
+              <button
+                onClick={() => saveHighlight(selectedText, highlightColor)}
+                className="flex-1 py-3 px-4 rounded-xl font-medium bg-gradient-to-r from-primary to-secondary text-white hover:shadow-lg transition-all"
+              >
+                保存高亮
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 搜索面板 */}
+      {showSearch && (
+        <div className={`fixed top-20 right-6 z-[60] ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-2xl p-4 w-80`}>
+          <div className="flex items-center gap-2 mb-3">
+            <Search className={`w-5 h-5 ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`} />
+            <h3 className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              搜索文档
+            </h3>
+            <button
+              onClick={() => setShowSearch(false)}
+              className={`ml-auto p-1 ${theme === 'dark' ? 'hover:bg-white/10' : 'hover:bg-gray-100'} rounded-lg transition-colors`}
+            >
+              <X className={`w-4 h-4 ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`} />
+            </button>
+          </div>
+
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="输入搜索关键词..."
+            className={`w-full px-4 py-2 rounded-xl border ${
+              theme === 'dark'
+                ? 'bg-white/10 border-white/20 text-white placeholder-white/40'
+                : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
+            } focus:outline-none focus:ring-2 focus:ring-primary text-sm`}
+            autoFocus
+          />
+
+          {searchQuery && (
+            <div className="mt-3">
+              <p className={`text-xs ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'} mb-2`}>
+                搜索功能将在未来版本中完善
+              </p>
+              <p className={`text-xs ${theme === 'dark' ? 'text-white/40' : 'text-gray-400'}`}>
+                目前可使用浏览器内置搜索 (Ctrl+F)
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>
