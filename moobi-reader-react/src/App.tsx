@@ -1,16 +1,20 @@
 import { useState } from 'react';
-import { BookOpen, Bookmark, Search, TrendingUp, Upload } from 'lucide-react';
+import { BookOpen, Bookmark, TrendingUp, Upload, Wrench } from 'lucide-react';
 import { useBookStore } from './stores/useBookStore';
 import WelcomeScreen from './components/WelcomeScreen';
 import FileUploader from './components/FileUploader';
 import RecentBooks from './components/RecentBooks';
 import ImmersiveReader from './components/ImmersiveReader';
+import DevToolbox from './components/DevToolbox';
 import type { Book } from './types';
+
+type View = 'reader' | 'toolbox';
 
 function App() {
   const { bookshelf } = useBookStore();
   const [currentFile, setCurrentFile] = useState<{ file: File; name: string; type: string } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [currentView, setCurrentView] = useState<View>('reader');
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -57,6 +61,11 @@ function App() {
     );
   }
 
+  // 如果在工具箱视图
+  if (currentView === 'toolbox') {
+    return <DevToolbox onBack={() => setCurrentView('reader')} />;
+  }
+
   // 否则显示主界面
   return (
     <div
@@ -91,13 +100,14 @@ function App() {
           {/* 功能卡片 */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
             {[
-              { icon: BookOpen, title: '书架管理', desc: '自动保存历史', color: 'from-primary to-primary-light' },
-              { icon: Bookmark, title: '书签笔记', desc: '标记重要内容', color: 'from-accent-pink to-accent-orange' },
-              { icon: TrendingUp, title: '阅读统计', desc: '追踪进度', color: 'from-accent-green to-accent-teal' },
-              { icon: Search, title: '全文搜索', desc: '快速查找', color: 'from-secondary to-accent-purple' },
+              { icon: BookOpen, title: '书架管理', desc: '自动保存历史', color: 'from-primary to-primary-light', onClick: undefined },
+              { icon: Bookmark, title: '书签笔记', desc: '标记重要内容', color: 'from-accent-pink to-accent-orange', onClick: undefined },
+              { icon: TrendingUp, title: '阅读统计', desc: '追踪进度', color: 'from-accent-green to-accent-teal', onClick: undefined },
+              { icon: Wrench, title: '开发工具', desc: '实用工具箱', color: 'from-blue-500 to-purple-500', onClick: () => setCurrentView('toolbox') },
             ].map((feature, i) => (
               <div
                 key={i}
+                onClick={feature.onClick}
                 className="group text-center p-6 bg-white/5 rounded-3xl hover:bg-white/10 transition-all duration-300 ease-smooth hover:scale-105 hover:shadow-soft-lg cursor-pointer border border-white/10 hover:border-white/20 animate-scale-in"
                 style={{ animationDelay: `${i * 100}ms` }}
               >
