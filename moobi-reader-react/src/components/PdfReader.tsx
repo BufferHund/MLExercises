@@ -293,16 +293,7 @@ export default function PdfReader({ file, theme, zoom = 100, onPageChange, onPro
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 ${
-            theme === 'dark' ? 'bg-white/10' : 'bg-gray-900/10'
-          }`}>
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-          <p className={`text-base font-medium ${theme === 'dark' ? 'text-white/70' : 'text-gray-700'}`}>
-            正在加载PDF文档...
-          </p>
-        </div>
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
