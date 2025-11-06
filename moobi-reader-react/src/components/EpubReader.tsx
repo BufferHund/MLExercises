@@ -13,11 +13,40 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
   const viewerRef = useRef<HTMLDivElement>(null);
   const bookRef = useRef<any>(null);
   const renditionRef = useRef<Rendition | null>(null);
+  const loadingRef = useRef(false); // 防止React Strict Mode双重加载
+  const fileNameRef = useRef<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewerReady, setViewerReady] = useState(false);
 
-  // 加载EPUB文件 - 只依赖file
+  // 第一步：等待viewer div渲染
   useEffect(() => {
+    // 使用setTimeout确保DOM已经渲染
+    const timer = setTimeout(() => {
+      if (viewerRef.current) {
+        console.log('✅ EPUB viewer div is ready');
+        setViewerReady(true);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 第二步：加载EPUB文件 - 只在viewer准备好后执行
+  useEffect(() => {
+    if (!viewerReady) {
+      console.log('⏳ Waiting for EPUB viewer to be ready...');
+      return;
+    }
+
+    // 防止Strict Mode导致的双重加载
+    if (loadingRef.current && fileNameRef.current === file.name) {
+      console.log('⏭️ Skipping duplicate EPUB load (Strict Mode)');
+      return;
+    }
+
+    loadingRef.current = true;
+    fileNameRef.current = file.name;
     let mounted = true;
 
     const loadEpub = async () => {
@@ -40,20 +69,10 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
         await epubBook.ready;
         console.log('✅ EPUB book ready');
 
-        if (!mounted) return;
-
-        // 等待viewer准备好
-        let attempts = 0;
-        while (!viewerRef.current && attempts < 50) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-          attempts++;
+        if (!mounted || !viewerRef.current) {
+          console.log('⚠️ Component unmounted or viewer not ready');
+          return;
         }
-
-        if (!viewerRef.current) {
-          throw new Error('Viewer element not ready after 2.5 seconds');
-        }
-
-        if (!mounted) return;
 
         // 创建rendition
         const rend = epubBook.renderTo(viewerRef.current, {
@@ -129,8 +148,12 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
           console.warn('⚠️ Error destroying rendition:', err);
         }
       }
+      // 只有在文件真正改变时才重置loading标志
+      if (fileNameRef.current !== file.name) {
+        loadingRef.current = false;
+      }
     };
-  }, [file]); // 只依赖file
+  }, [file, viewerReady]); // 依赖file和viewerReady
 
   // 更新主题
   useEffect(() => {

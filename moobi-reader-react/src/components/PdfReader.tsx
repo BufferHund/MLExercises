@@ -19,6 +19,8 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<any>(null);
   const pdfDocRef = useRef<any>(null);
+  const loadingRef = useRef(false); // 防止React Strict Mode双重加载
+  const fileNameRef = useRef<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,14 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
 
   // 加载PDF文件 - 只依赖file
   useEffect(() => {
+    // 防止Strict Mode导致的双重加载
+    if (loadingRef.current && fileNameRef.current === file.name) {
+      console.log('⏭️ Skipping duplicate PDF load (Strict Mode)');
+      return;
+    }
+
+    loadingRef.current = true;
+    fileNameRef.current = file.name;
     let mounted = true;
 
     const loadPdf = async () => {
@@ -71,6 +81,10 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
       console.log('🧹 PDF loader cleanup');
       if (pdfDocRef.current) {
         pdfDocRef.current.cleanup?.();
+      }
+      // 只有在文件真正改变时才重置loading标志
+      if (fileNameRef.current !== file.name) {
+        loadingRef.current = false;
       }
     };
   }, [file]); // 只依赖file
