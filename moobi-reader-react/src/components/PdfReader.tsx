@@ -14,6 +14,45 @@ interface PdfReaderProps {
   onProgressChange?: (progress: number) => void;
 }
 
+// 模块级缓存：防止React Strict Mode重复加载
+const fileCache = new Map<string, { promise: Promise<ArrayBuffer>, result?: ArrayBuffer }>();
+
+function getCacheKey(file: File): string {
+  return `${file.name}-${file.size}-${file.lastModified}`;
+}
+
+async function loadFileWithCache(file: File, effectId: number): Promise<ArrayBuffer> {
+  const key = getCacheKey(file);
+
+  if (fileCache.has(key)) {
+    const cached = fileCache.get(key)!;
+    if (cached.result) {
+      console.log(`🚀 [PDF Effect #${effectId}] Using cached ArrayBuffer (instant)`);
+      return cached.result;
+    } else {
+      console.log(`⏳ [PDF Effect #${effectId}] Waiting for in-flight ArrayBuffer load...`);
+      const result = await cached.promise;
+      console.log(`✅ [PDF Effect #${effectId}] Got result from in-flight load`);
+      return result;
+    }
+  }
+
+  console.log(`📄 [PDF Effect #${effectId}] Starting NEW file.arrayBuffer()...`);
+  const promise = file.arrayBuffer();
+  fileCache.set(key, { promise });
+
+  const result = await promise;
+  fileCache.set(key, { promise, result });
+
+  // 5秒后清除缓存
+  setTimeout(() => {
+    console.log(`🧹 [PDF Cache] Clearing cache for ${file.name}`);
+    fileCache.delete(key);
+  }, 5000);
+
+  return result;
+}
+
 export default function PdfReader({ file, theme, onPageChange, onProgressChange }: PdfReaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -39,10 +78,13 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
 
     const loadPdf = async () => {
       try {
-        console.log(`📄 [PDF Effect #${effectId}] Starting file.arrayBuffer()...`);
-        const arrayBuffer = await file.arrayBuffer();
+        setLoading(true);
+        setError(null);
+        setCurrentPage(1);
+
+        const arrayBuffer = await loadFileWithCache(file, effectId);
         const arrayBufferTime = Date.now() - startTime;
-        console.log(`✅ [PDF Effect #${effectId}] ArrayBuffer loaded in ${arrayBufferTime}ms`);
+        console.log(`✅ [PDF Effect #${effectId}] ArrayBuffer ready in ${arrayBufferTime}ms`);
 
         if (!mounted) {
           console.log(`⚠️ [PDF Effect #${effectId}] Component unmounted after arrayBuffer, ABORTING`);
@@ -50,10 +92,6 @@ export default function PdfReader({ file, theme, onPageChange, onProgressChange 
         }
 
         console.log(`📄 [PDF Effect #${effectId}] Starting pdfjsLib.getDocument()...`);
-        setLoading(true);
-        setError(null);
-        setCurrentPage(1);
-
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
         const pdfDoc = await loadingTask.promise;
 

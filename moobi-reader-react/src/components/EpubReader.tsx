@@ -91,10 +91,23 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
           width: '100%',
           height: '600px',
           spread: 'none',
+          allowScriptedContent: true, // 允许EPUB中的脚本内容
         });
 
         renditionRef.current = rend;
         console.log(`✅ [EPUB Effect #${effectId}] Rendition created`);
+
+        // 修复iframe sandbox问题：允许脚本执行
+        rend.hooks.content.register((contents: any) => {
+          const iframe = contents.document?.defaultView?.frameElement;
+          if (iframe) {
+            const currentSandbox = iframe.getAttribute('sandbox') || '';
+            if (!currentSandbox.includes('allow-scripts')) {
+              iframe.setAttribute('sandbox', currentSandbox + ' allow-scripts');
+              console.log(`✅ [EPUB Effect #${effectId}] Fixed iframe sandbox to allow scripts`);
+            }
+          }
+        });
 
         // 应用初始主题
         console.log(`🎨 [EPUB Effect #${effectId}] Applying theme: ${theme}`);
@@ -199,17 +212,43 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
     }
   }, [fontSize]);
 
+  const navigatingRef = useRef(false); // 防止重复翻页
+
   const goToNextPage = useCallback(async () => {
-    if (renditionRef.current) {
+    if (renditionRef.current && !navigatingRef.current) {
+      navigatingRef.current = true;
       console.log('➡️ [EPUB Nav] Next page requested');
-      await renditionRef.current.next();
+      try {
+        await renditionRef.current.next();
+      } catch (err) {
+        console.error('❌ [EPUB Nav] Error navigating next:', err);
+      } finally {
+        // 300ms后允许下一次翻页
+        setTimeout(() => {
+          navigatingRef.current = false;
+        }, 300);
+      }
+    } else if (navigatingRef.current) {
+      console.log('⏸️ [EPUB Nav] Navigation in progress, skipping...');
     }
   }, []);
 
   const goToPrevPage = useCallback(async () => {
-    if (renditionRef.current) {
+    if (renditionRef.current && !navigatingRef.current) {
+      navigatingRef.current = true;
       console.log('⬅️ [EPUB Nav] Previous page requested');
-      await renditionRef.current.prev();
+      try {
+        await renditionRef.current.prev();
+      } catch (err) {
+        console.error('❌ [EPUB Nav] Error navigating prev:', err);
+      } finally {
+        // 300ms后允许下一次翻页
+        setTimeout(() => {
+          navigatingRef.current = false;
+        }, 300);
+      }
+    } else if (navigatingRef.current) {
+      console.log('⏸️ [EPUB Nav] Navigation in progress, skipping...');
     }
   }, []);
 
