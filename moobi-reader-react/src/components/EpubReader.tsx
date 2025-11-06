@@ -15,40 +15,30 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
   const renditionRef = useRef<Rendition | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
 
-  // Callback ref to ensure div is ready
-  const setViewerRef = useCallback((node: HTMLDivElement | null) => {
-    if (node) {
-      viewerRef.current = node;
-      setReady(true);
-    }
-  }, []);
-
-  // 加载EPUB文件
+  // 加载EPUB文件 - 只依赖file
   useEffect(() => {
     let mounted = true;
 
     const loadEpub = async () => {
       try {
+        console.log('📚 Loading EPUB file:', file.name);
         setLoading(true);
         setError(null);
 
-        console.log('Loading EPUB file:', file.name);
-
         // 将文件转换为ArrayBuffer
         const arrayBuffer = await file.arrayBuffer();
-        console.log('ArrayBuffer loaded, size:', arrayBuffer.byteLength);
+        console.log('✅ EPUB ArrayBuffer loaded, size:', arrayBuffer.byteLength);
 
         // 创建EPUB book实例（直接使用ArrayBuffer）
         const epubBook = ePub(arrayBuffer);
         bookRef.current = epubBook;
 
-        console.log('EPUB book instance created');
+        console.log('✅ EPUB book instance created');
 
         // 等待book加载完成
         await epubBook.ready;
-        console.log('EPUB book ready');
+        console.log('✅ EPUB book ready');
 
         if (!mounted) return;
 
@@ -73,9 +63,9 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
         });
 
         renditionRef.current = rend;
-        console.log('Rendition created');
+        console.log('✅ Rendition created');
 
-        // 应用主题
+        // 应用初始主题
         if (theme === 'dark') {
           rend.themes.override('background', '#111827');
           rend.themes.override('color', '#f9fafb');
@@ -84,12 +74,12 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
           rend.themes.override('color', '#111827');
         }
 
-        // 设置字体大小
+        // 设置初始字体大小
         rend.themes.fontSize(`${fontSize}px`);
 
         // 显示第一页
         await rend.display();
-        console.log('First page displayed');
+        console.log('✅ First page displayed');
 
         if (!mounted) return;
 
@@ -105,19 +95,21 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
               onProgressChange(Math.round(progress * 100));
             }
           } catch (err) {
-            console.warn('Error calculating progress:', err);
+            console.warn('⚠️ Error calculating progress:', err);
           }
         });
 
         // 生成位置信息（在后台异步执行）
         epubBook.locations.generate(1600).then(() => {
-          console.log('Locations generated');
+          console.log('✅ Locations generated');
         }).catch((err: any) => {
-          console.warn('Error generating locations:', err);
+          console.warn('⚠️ Error generating locations:', err);
         });
 
+        console.log('✅ EPUB ready for reading');
+
       } catch (err: any) {
-        console.error('Error loading EPUB:', err);
+        console.error('❌ Error loading EPUB:', err);
         if (mounted) {
           setError(`加载EPUB文件失败: ${err.message || '未知错误'}`);
           setLoading(false);
@@ -125,22 +117,20 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
       }
     };
 
-    // 只在ready后加载
-    if (ready) {
-      loadEpub();
-    }
+    loadEpub();
 
     return () => {
       mounted = false;
+      console.log('🧹 EPUB loader cleanup');
       if (renditionRef.current) {
         try {
           renditionRef.current.destroy();
         } catch (err) {
-          console.warn('Error destroying rendition:', err);
+          console.warn('⚠️ Error destroying rendition:', err);
         }
       }
     };
-  }, [file, ready, fontSize, theme, onProgressChange]);
+  }, [file]); // 只依赖file
 
   // 更新主题
   useEffect(() => {
@@ -162,17 +152,19 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
     }
   }, [fontSize]);
 
-  const goToNextPage = async () => {
+  const goToNextPage = useCallback(async () => {
     if (renditionRef.current) {
+      console.log('➡️ EPUB next page requested');
       await renditionRef.current.next();
     }
-  };
+  }, []);
 
-  const goToPrevPage = async () => {
+  const goToPrevPage = useCallback(async () => {
     if (renditionRef.current) {
+      console.log('⬅️ EPUB previous page requested');
       await renditionRef.current.prev();
     }
-  };
+  }, []);
 
   // 导出方法供父组件调用
   useEffect(() => {
@@ -180,7 +172,7 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
       nextPage: goToNextPage,
       prevPage: goToPrevPage,
     };
-  }, []);
+  }, [goToNextPage, goToPrevPage]);
 
   if (loading) {
     return (
@@ -221,7 +213,7 @@ export default function EpubReader({ file, fontSize, theme, onProgressChange }: 
 
   return (
     <div
-      ref={setViewerRef}
+      ref={viewerRef}
       className={`w-full min-h-[600px] rounded-2xl shadow-2xl overflow-hidden ${
         theme === 'dark' ? 'bg-gray-800' : 'bg-white'
       }`}
