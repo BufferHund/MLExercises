@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  moobi-reader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: moobi-reader
+    ports:
+      - "1000:1000"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    # 可选：挂载卷以持久化数据
+    # volumes:
+    #   - ./data:/data
