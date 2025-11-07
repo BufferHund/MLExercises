@@ -6,6 +6,7 @@ import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import ToolWidget from './ToolWidget';
 import ToolDetail from './ToolDetail';
 import LoginModal from './LoginModal';
+import RegisterModal from './RegisterModal';
 import AISearch from './AISearch';
 import WidgetContainer from './WidgetContainer';
 import WidgetManager from './WidgetManager';
@@ -15,11 +16,17 @@ import type { ToolId, ToolCategory } from '../types/tools';
 export default function DevToolbox() {
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
   const [showWidgetManager, setShowWidgetManager] = useState(false);
   const [showAllTools, setShowAllTools] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
-  const { isLoggedIn, isPremium, email, logout } = useUserStore();
+  const { isLoggedIn, isPremium, username, email, logout, checkAuth } = useUserStore();
   const { savePosition } = useScrollRestoration('dev-toolbox-main');
+
+  // 检查认证状态
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   // 检测是否首次加载
   useEffect(() => {
@@ -93,7 +100,7 @@ export default function DevToolbox() {
               <>
                 <div className="flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-xl border border-slate-700">
                   {isPremium && <Crown className="w-4 h-4 text-yellow-500" />}
-                  <span className="text-sm text-slate-300">{email}</span>
+                  <span className="text-sm text-slate-300">{username || email}</span>
                 </div>
                 <button
                   onClick={logout}
@@ -155,7 +162,26 @@ export default function DevToolbox() {
       </div>
 
       {/* Login Modal */}
-      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+      {showLogin && (
+        <LoginModal
+          onClose={() => setShowLogin(false)}
+          onShowRegister={() => {
+            setShowLogin(false);
+            setShowRegister(true);
+          }}
+        />
+      )}
+
+      {/* Register Modal */}
+      {showRegister && (
+        <RegisterModal
+          onClose={() => setShowRegister(false)}
+          onShowLogin={() => {
+            setShowRegister(false);
+            setShowLogin(true);
+          }}
+        />
+      )}
 
       {/* Widget Manager */}
       {showWidgetManager && <WidgetManager onClose={() => setShowWidgetManager(false)} />}

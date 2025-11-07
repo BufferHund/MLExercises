@@ -1,32 +1,38 @@
 import { useState } from 'react';
-import { X, Lock } from 'lucide-react';
+import { X, Lock, LogIn } from 'lucide-react';
 import { useUserStore } from '../stores/useUserStore';
+import { getPortalLoginUrl } from '../config/superauth';
 
 interface LoginModalProps {
   onClose: () => void;
+  onShowRegister?: () => void;
 }
 
-export default function LoginModal({ onClose }: LoginModalProps) {
-  const [email, setEmail] = useState('');
+export default function LoginModal({ onClose, onShowRegister }: LoginModalProps) {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const login = useUserStore((state) => state.login);
+  const { login, authMode, setAuthMode } = useUserStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    const success = await login(email, password);
+    const result = await login(username, password);
 
-    if (success) {
+    if (result.success) {
       onClose();
     } else {
-      setError('登录失败，密码至少6位');
+      setError(result.message || '登录失败');
     }
 
     setLoading(false);
+  };
+
+  const handlePortalLogin = () => {
+    window.location.href = getPortalLoginUrl(window.location.href);
   };
 
   return (
@@ -48,58 +54,116 @@ export default function LoginModal({ onClose }: LoginModalProps) {
           </button>
         </div>
 
-        {/* Demo Info */}
-        <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-          <p className="text-sm text-blue-300 mb-2">演示账号：</p>
-          <p className="text-xs text-slate-400">免费用户: any@example.com / 123456</p>
-          <p className="text-xs text-slate-400">付费用户: premium@example.com / 123456</p>
+        {/* Auth Mode Switcher */}
+        <div className="mb-6 flex gap-2 p-1 bg-slate-700/50 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setAuthMode('direct')}
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+              authMode === 'direct'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-400 hover:text-slate-300'
+            }`}
+          >
+            直接登录
+          </button>
+          <button
+            type="button"
+            onClick={() => setAuthMode('portal')}
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+              authMode === 'portal'
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-400 hover:text-slate-300'
+            }`}
+          >
+            统一认证
+          </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              邮箱
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
-              placeholder="your@example.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              密码
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
-              placeholder="••••••"
-            />
-          </div>
-
-          {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
-              <p className="text-sm text-red-400">{error}</p>
+        {authMode === 'direct' ? (
+          <>
+            {/* Demo Info */}
+            <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+              <p className="text-sm text-blue-300 mb-2">演示账号：</p>
+              <p className="text-xs text-slate-400">免费用户: testuser / 123456</p>
+              <p className="text-xs text-slate-400">付费用户: premiumuser / 123456</p>
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 rounded-xl font-medium text-white transition-colors"
-          >
-            {loading ? '登录中...' : '登录'}
-          </button>
-        </form>
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  用户名
+                </label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
+                  placeholder="请输入用户名"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  密码
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
+                  placeholder="••••••"
+                />
+              </div>
+
+              {error && (
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                  <p className="text-sm text-red-400">{error}</p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 rounded-xl font-medium text-white transition-colors"
+              >
+                {loading ? '登录中...' : '登录'}
+              </button>
+
+              {/* Register Link */}
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={onShowRegister}
+                  className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  还没有账号？立即注册
+                </button>
+              </div>
+            </form>
+          </>
+        ) : (
+          /* Portal Mode */
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+              <p className="text-sm text-blue-300 mb-2">统一认证平台</p>
+              <p className="text-xs text-slate-400">点击下方按钮跳转到统一认证平台进行登录</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handlePortalLogin}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-medium text-white transition-colors flex items-center justify-center gap-2"
+            >
+              <LogIn className="w-4 h-4" />
+              跳转到认证平台
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
