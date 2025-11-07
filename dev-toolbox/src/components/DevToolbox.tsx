@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
-import { LogIn, LogOut, Crown } from 'lucide-react';
+import { LogIn, LogOut, Crown, Layout } from 'lucide-react';
 import { tools, toolCategories } from '../config/tools';
 import { useUserStore } from '../stores/useUserStore';
 import ToolWidget from './ToolWidget';
 import ToolDetail from './ToolDetail';
 import LoginModal from './LoginModal';
 import AISearch from './AISearch';
-import NewsWidget from './NewsWidget';
-import WeatherWidget from './WeatherWidget';
+import WidgetContainer from './WidgetContainer';
+import WidgetManager from './WidgetManager';
 import type { ToolId, ToolCategory } from '../types/tools';
 
 export default function DevToolbox() {
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [showWidgetManager, setShowWidgetManager] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const { isLoggedIn, isPremium, email, logout } = useUserStore();
 
@@ -66,6 +67,14 @@ export default function DevToolbox() {
 
           {/* User Menu */}
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowWidgetManager(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 text-slate-300 transition-colors"
+              title="管理卡片"
+            >
+              <Layout className="w-4 h-4" />
+              <span className="hidden md:inline">卡片</span>
+            </button>
             {isLoggedIn ? (
               <>
                 <div className="flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-xl border border-slate-700">
@@ -95,11 +104,8 @@ export default function DevToolbox() {
         {/* AI Search Bar */}
         <AISearch />
 
-        {/* News and Weather */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-          <NewsWidget />
-          <WeatherWidget />
-        </div>
+        {/* Widgets */}
+        <WidgetContainer />
 
         {/* Tool Categories */}
         <div className="space-y-12">
@@ -136,6 +142,9 @@ export default function DevToolbox() {
 
       {/* Login Modal */}
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+
+      {/* Widget Manager */}
+      {showWidgetManager && <WidgetManager onClose={() => setShowWidgetManager(false)} />}
     </div>
   );
 }
