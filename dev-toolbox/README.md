@@ -1,6 +1,6 @@
-# Developer Workspace
+# Dev Toolbox
 
-开发者工作空间 - 集成电子书阅读器和开发工具箱的多功能应用
+开发者工具箱 - 集成 Web/AI 开发工具和电子书阅读器
 
 ## 功能特性
 
