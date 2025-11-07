@@ -37,15 +37,25 @@ export default function MobiReader({ file, fontSize, theme, onProgressChange }: 
     console.log(`🔵 [MOBI Effect #${effectId}] Starting to load MOBI file:`, file.name);
 
     const loadMobi = async () => {
-      // 等待 viewerRef 准备好
+      // 等待 viewerRef 准备好，最多重试10次
+      let retries = 0;
+      const maxRetries = 10;
+      while (!viewerRef.current && retries < maxRetries && isMounted) {
+        console.warn(`⚠️ [MOBI Effect #${effectId}] viewerRef not ready yet, retry ${retries + 1}/${maxRetries}...`);
+        await new Promise(resolve => setTimeout(resolve, 100)); // 等待100ms
+        retries++;
+      }
+
+      if (!isMounted) {
+        console.warn(`⚠️ [MOBI Effect #${effectId}] Component unmounted during retry`);
+        return;
+      }
+
       if (!viewerRef.current) {
-        console.warn(`⚠️ [MOBI Effect #${effectId}] viewerRef not ready yet, retrying...`);
-        // 延迟一帧后重试
-        await new Promise(resolve => requestAnimationFrame(() => resolve(null)));
-        if (!isMounted || !viewerRef.current) {
-          console.warn(`⚠️ [MOBI Effect #${effectId}] Component unmounted or viewerRef still not ready`);
-          return;
-        }
+        console.error(`❌ [MOBI Effect #${effectId}] viewerRef still not ready after ${maxRetries} retries`);
+        setError('初始化失败：无法准备阅读器容器。请刷新页面重试。');
+        setLoading(false);
+        return;
       }
 
       try {
