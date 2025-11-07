@@ -427,8 +427,16 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     }
   };
 
-  const handleMouseMove = () => {
-    setShowControls(true);
+  const handleMouseMove = (e: React.MouseEvent) => {
+    // 检测鼠标是否靠近右侧悬浮栏区域
+    // 悬浮栏位置：右侧居中，给予150px的检测范围
+    const windowWidth = window.innerWidth;
+    const isNearFloatingBar = e.clientX > windowWidth - 150; // 右侧150px范围
+
+    // 如果鼠标不在悬浮栏附近，则显示控制栏
+    if (!isNearFloatingBar) {
+      setShowControls(true);
+    }
   };
 
   const handleNextPage = () => {
@@ -713,7 +721,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       </div>
 
       {/* 主阅读区域 */}
-      <div ref={readerContainerRef} className={`flex-1 overflow-y-auto flex items-center justify-center ${themeColors.bg} ${themeColors.text} transition-colors duration-300 ${isPageFlipping ? 'animate-kindle-flip' : ''}`}>
+      <div ref={readerContainerRef} className={`relative z-50 flex-1 overflow-y-auto flex items-center justify-center ${themeColors.bg} ${themeColors.text} transition-colors duration-300 ${isPageFlipping ? 'animate-kindle-flip' : ''}`}>
         {/* 原生PDF模式 - 完全占满 */}
         {fileType === 'pdf' && pdfDisplayMode === 'native' ? (
           <div className="w-full h-full">
@@ -913,46 +921,53 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         </div>
       </div>
 
-      {/* 常驻浮动控制栏 - 右下角 - 只在主控制栏隐藏时显示 */}
+      {/* 常驻浮动控制栏 - 右侧居中胶囊式 - 只在主控制栏隐藏时显示 */}
       {!zenMode && !showControls && (
-        <div className={`fixed bottom-6 right-6 z-50 ${themeColors.controlBg} backdrop-blur-xl rounded-2xl shadow-2xl border ${themeColors.border} p-3 animate-scale-in`}>
+        <div className={`fixed right-6 top-1/2 -translate-y-1/2 z-40 ${themeColors.controlBg} backdrop-blur-xl rounded-full shadow-2xl border ${themeColors.border} p-2 animate-scale-in`}>
           <div className="flex flex-col gap-2">
-            {/* 翻页控制 */}
-            <div className="flex gap-2">
-              <button
-                onClick={handlePrevPage}
-                className={`p-2 ${themeColors.hover} rounded-xl transition-colors flex items-center justify-center`}
-                title="上一页 (←)"
-              >
-                <ChevronLeft className={`w-4 h-4 ${themeColors.text}`} />
-              </button>
-              <button
-                onClick={handleNextPage}
-                className={`p-2 ${themeColors.hover} rounded-xl transition-colors flex items-center justify-center`}
-                title="下一页 (→)"
-              >
-                <ChevronRight className={`w-4 h-4 ${themeColors.text}`} />
-              </button>
-            </div>
-
-            {/* 分隔线 */}
-            <div className={`h-px ${themeColors.border}`} />
-
-            {/* 常用功能 */}
+            {/* 上一页 */}
             <button
-              onClick={handleAddBookmark}
-              className={`p-2 ${themeColors.hover} rounded-xl transition-colors flex items-center justify-center`}
-              title="添加书签"
+              onClick={handlePrevPage}
+              className={`p-3 ${themeColors.hover} rounded-full transition-all hover:scale-110 flex items-center justify-center`}
+              title="上一页 (←)"
             >
-              <Bookmark className={`w-4 h-4 ${themeColors.text}`} />
+              <ChevronLeft className={`w-5 h-5 ${themeColors.text}`} />
             </button>
 
+            {/* 分隔线 */}
+            <div className={`h-px mx-1 ${themeColors.border}`} />
+
+            {/* 下一页 */}
+            <button
+              onClick={handleNextPage}
+              className={`p-3 ${themeColors.hover} rounded-full transition-all hover:scale-110 flex items-center justify-center`}
+              title="下一页 (→)"
+            >
+              <ChevronRight className={`w-5 h-5 ${themeColors.text}`} />
+            </button>
+
+            {/* 分隔线 */}
+            <div className={`h-px mx-1 ${themeColors.border}`} />
+
+            {/* 书签 */}
+            <button
+              onClick={handleAddBookmark}
+              className={`p-3 ${themeColors.hover} rounded-full transition-all hover:scale-110 flex items-center justify-center`}
+              title="添加书签"
+            >
+              <Bookmark className={`w-5 h-5 ${themeColors.text}`} />
+            </button>
+
+            {/* 分隔线 */}
+            <div className={`h-px mx-1 ${themeColors.border}`} />
+
+            {/* 设置 */}
             <button
               onClick={() => setShowSettings(true)}
-              className={`p-2 ${themeColors.hover} rounded-xl transition-colors flex items-center justify-center`}
+              className={`p-3 ${themeColors.hover} rounded-full transition-all hover:scale-110 flex items-center justify-center`}
               title="设置"
             >
-              <Settings className={`w-4 h-4 ${themeColors.text}`} />
+              <Settings className={`w-5 h-5 ${themeColors.text}`} />
             </button>
           </div>
         </div>
@@ -960,7 +975,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
       {/* PDF显示模式切换按钮 - 左下角 */}
       {fileType === 'pdf' && !zenMode && (
-        <div className={`fixed bottom-6 left-6 z-50 ${themeColors.controlBg} backdrop-blur-xl rounded-2xl shadow-2xl border ${themeColors.border} p-3 transition-all duration-300`}>
+        <div className={`fixed bottom-6 left-6 z-40 ${themeColors.controlBg} backdrop-blur-xl rounded-2xl shadow-2xl border ${themeColors.border} p-3 transition-all duration-300`}>
           <button
             onClick={() => setPdfDisplayMode(pdfDisplayMode === 'native' ? 'custom' : 'native')}
             className={`p-2 ${themeColors.hover} rounded-xl transition-colors flex items-center gap-2`}
