@@ -83,8 +83,6 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
   const touchStartY = useRef(0);
   const readerContainerRef = useRef<HTMLDivElement>(null);
   const floatingBarRef = useRef<HTMLDivElement>(null);
-  const dragStartPos = useRef({ x: 0, y: 0 });
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const sessionStartTime = useRef(Date.now());
   const readingTimeInterval = useRef<NodeJS.Timeout | null>(null);
 
@@ -444,93 +442,57 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     e.preventDefault();
     e.stopPropagation();
 
-    const clientX = e.clientX;
-    const clientY = e.clientY;
-    dragStartPos.current = { x: clientX, y: clientY };
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let isDragging = false;
 
     // 长按500ms后进入拖动模式
-    longPressTimer.current = setTimeout(() => {
+    const timer = setTimeout(() => {
+      isDragging = true;
       setIsDraggingFloatingBar(true);
-      setDragPosition({ x: clientX, y: clientY });
+      setDragPosition({ x: startX, y: startY });
     }, 500);
-  };
 
-  const handleFloatingBarTouchStart = (e: React.TouchEvent) => {
-    e.stopPropagation();
-
-    const touch = e.touches[0];
-    const clientX = touch.clientX;
-    const clientY = touch.clientY;
-    dragStartPos.current = { x: clientX, y: clientY };
-
-    // 长按500ms后进入拖动模式
-    longPressTimer.current = setTimeout(() => {
-      setIsDraggingFloatingBar(true);
-      setDragPosition({ x: clientX, y: clientY });
-    }, 500);
-  };
-
-  // 取消长按
-  const cancelLongPress = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  };
-
-  // 拖动移动处理
-  useEffect(() => {
-    if (!isDraggingFloatingBar) return;
-
-    const handleMove = (e: MouseEvent | TouchEvent) => {
-      e.preventDefault();
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-
-      // 直接跟随手指位置
-      setDragPosition({ x: clientX, y: clientY });
+    const handleMove = (e: MouseEvent) => {
+      if (isDragging) {
+        e.preventDefault();
+        setDragPosition({ x: e.clientX, y: e.clientY });
+      }
     };
 
-    const handleEnd = (e: MouseEvent | TouchEvent) => {
-      cancelLongPress();
+    const handleEnd = (e: MouseEvent) => {
+      clearTimeout(timer);
 
-      // 如果正在拖动，则计算吸附位置
-      if (isDraggingFloatingBar && dragPosition) {
-        const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : (e as MouseEvent).clientX;
-        const clientY = 'changedTouches' in e ? e.changedTouches[0].clientY : (e as MouseEvent).clientY;
-
+      if (isDragging) {
+        // 计算吸附位置
+        const clientX = e.clientX;
+        const clientY = e.clientY;
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
 
-        // 计算到各边缘的距离
         const distToLeft = clientX;
         const distToRight = windowWidth - clientX;
         const distToTop = clientY;
         const distToBottom = windowHeight - clientY;
 
-        // 找出最近的边缘
         const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
 
         let newEdge: 'top' | 'right' | 'bottom' | 'left';
         let newPosition = { x: 0, y: 50 };
 
         if (minDist === distToTop) {
-          // 吸附到顶部
           newEdge = 'top';
           const xPercent = (clientX / windowWidth) * 100;
           newPosition = { x: Math.max(10, Math.min(90, xPercent)), y: 0 };
         } else if (minDist === distToBottom) {
-          // 吸附到底部
           newEdge = 'bottom';
           const xPercent = (clientX / windowWidth) * 100;
           newPosition = { x: Math.max(10, Math.min(90, xPercent)), y: 100 };
         } else if (minDist === distToLeft) {
-          // 吸附到左侧
           newEdge = 'left';
           const yPercent = (clientY / windowHeight) * 100;
           newPosition = { x: 100, y: Math.max(10, Math.min(90, yPercent)) };
         } else {
-          // 吸附到右侧
           newEdge = 'right';
           const yPercent = (clientY / windowHeight) * 100;
           newPosition = { x: 0, y: Math.max(10, Math.min(90, yPercent)) };
@@ -538,24 +500,93 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
         setFloatingBarEdge(newEdge);
         setFloatingBarPosition(newPosition);
+        setIsDraggingFloatingBar(false);
+        setDragPosition(null);
       }
 
-      setIsDraggingFloatingBar(false);
-      setDragPosition(null);
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleEnd);
     };
 
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleEnd);
-    window.addEventListener('touchmove', handleMove);
-    window.addEventListener('touchend', handleEnd);
+  };
 
-    return () => {
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('mouseup', handleEnd);
+  const handleFloatingBarTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+
+    const touch = e.touches[0];
+    const startX = touch.clientX;
+    const startY = touch.clientY;
+    let isDragging = false;
+
+    // 长按500ms后进入拖动模式
+    const timer = setTimeout(() => {
+      isDragging = true;
+      setIsDraggingFloatingBar(true);
+      setDragPosition({ x: startX, y: startY });
+    }, 500);
+
+    const handleMove = (e: TouchEvent) => {
+      if (isDragging && e.touches[0]) {
+        e.preventDefault();
+        setDragPosition({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      }
+    };
+
+    const handleEnd = (e: TouchEvent) => {
+      clearTimeout(timer);
+
+      if (isDragging && e.changedTouches[0]) {
+        // 计算吸附位置
+        const clientX = e.changedTouches[0].clientX;
+        const clientY = e.changedTouches[0].clientY;
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+
+        const distToLeft = clientX;
+        const distToRight = windowWidth - clientX;
+        const distToTop = clientY;
+        const distToBottom = windowHeight - clientY;
+
+        const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
+
+        let newEdge: 'top' | 'right' | 'bottom' | 'left';
+        let newPosition = { x: 0, y: 50 };
+
+        if (minDist === distToTop) {
+          newEdge = 'top';
+          const xPercent = (clientX / windowWidth) * 100;
+          newPosition = { x: Math.max(10, Math.min(90, xPercent)), y: 0 };
+        } else if (minDist === distToBottom) {
+          newEdge = 'bottom';
+          const xPercent = (clientX / windowWidth) * 100;
+          newPosition = { x: Math.max(10, Math.min(90, xPercent)), y: 100 };
+        } else if (minDist === distToLeft) {
+          newEdge = 'left';
+          const yPercent = (clientY / windowHeight) * 100;
+          newPosition = { x: 100, y: Math.max(10, Math.min(90, yPercent)) };
+        } else {
+          newEdge = 'right';
+          const yPercent = (clientY / windowHeight) * 100;
+          newPosition = { x: 0, y: Math.max(10, Math.min(90, yPercent)) };
+        }
+
+        setFloatingBarEdge(newEdge);
+        setFloatingBarPosition(newPosition);
+        setIsDraggingFloatingBar(false);
+        setDragPosition(null);
+      }
+
       window.removeEventListener('touchmove', handleMove);
       window.removeEventListener('touchend', handleEnd);
+      window.removeEventListener('touchcancel', handleEnd);
     };
-  }, [isDraggingFloatingBar, dragPosition]);
+
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', handleEnd);
+    window.addEventListener('touchcancel', handleEnd);
+  };
 
   const handleNextPage = () => {
     // 触发Kindle风格的翻页动画
@@ -1091,11 +1122,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                 }
           }
           onMouseDown={handleFloatingBarMouseDown}
-          onMouseUp={cancelLongPress}
-          onMouseLeave={cancelLongPress}
           onTouchStart={handleFloatingBarTouchStart}
-          onTouchEnd={cancelLongPress}
-          onTouchCancel={cancelLongPress}
         >
           {!isDraggingFloatingBar && (
             <div className={`flex gap-2 ${floatingBarEdge === 'top' || floatingBarEdge === 'bottom' ? 'flex-row' : 'flex-col'}`}>
