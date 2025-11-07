@@ -434,20 +434,9 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const windowHeight = window.innerHeight;
-    const windowWidth = window.innerWidth;
-
-    // 检测鼠标是否在顶部或底部区域（显示主控制栏的区域）
-    const isNearTopOrBottom = e.clientY < 100 || e.clientY > windowHeight - 100;
-
-    // 检测鼠标是否靠近右侧悬浮栏区域
-    const isNearFloatingBar = e.clientX > windowWidth - 150; // 右侧150px范围
-
-    // 只有在接近顶部/底部，且不在悬浮栏附近时，才显示主控制栏
-    if (isNearTopOrBottom && !isNearFloatingBar) {
-      setShowControls(true);
-    }
+  const handleMouseMove = () => {
+    // 控制栏隐藏后，只能通过悬浮栏按钮显示，不再响应鼠标移动
+    // 这样可以提供更沉浸的阅读体验
   };
 
   // 悬浮栏拖动处理 - 长按触发
@@ -1054,22 +1043,26 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       {!zenMode && !showControls && (
         <div
           ref={floatingBarRef}
-          className={`fixed z-40 backdrop-blur-xl shadow-2xl border touch-none select-none transition-all duration-300
+          className={`fixed z-40 backdrop-blur-xl shadow-2xl border touch-none select-none rounded-full
             ${isDraggingFloatingBar
-              ? 'cursor-grabbing bg-black/20 border-white/30 w-16 h-16 rounded-full opacity-60'
-              : `cursor-grab ${themeColors.controlBg} ${themeColors.border} rounded-full p-2`
+              ? 'cursor-grabbing bg-black/20 border-white/30'
+              : `cursor-grab ${themeColors.controlBg} ${themeColors.border}`
             }`}
           style={
             isDraggingFloatingBar && dragPosition
               ? {
-                  // 拖动时：使用绝对像素定位，跟随手指
+                  // 拖动时：使用绝对像素定位，跟随手指，变成圆形
                   left: `${dragPosition.x}px`,
                   top: `${dragPosition.y}px`,
                   transform: 'translate(-50%, -50%)',
-                  transition: 'none',
+                  width: '4rem',
+                  height: '4rem',
+                  padding: '0',
+                  opacity: 0.6,
+                  transition: 'width 0.3s ease, height 0.3s ease, padding 0.3s ease, opacity 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, left 0s, top 0s, transform 0s',
                 }
               : {
-                  // 正常状态：使用百分比定位，吸附在边缘
+                  // 正常状态：使用百分比定位，吸附在边缘，胶囊形状
                   ...(floatingBarEdge === 'top' && {
                     left: `${floatingBarPosition.x}%`,
                     top: '1rem',
@@ -1090,6 +1083,10 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                     top: `${floatingBarPosition.y}%`,
                     transform: 'translate(0, -50%)',
                   }),
+                  width: 'auto',
+                  height: 'auto',
+                  padding: '0.5rem',
+                  opacity: 1,
                   transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }
           }
