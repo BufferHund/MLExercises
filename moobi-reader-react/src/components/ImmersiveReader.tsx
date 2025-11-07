@@ -160,6 +160,79 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     }
   }, []);
 
+  // 智能定位悬浮工具条 - 放在屏幕边缘和书页内容之间的空白区域
+  useEffect(() => {
+    const calculateSmartPosition = () => {
+      if (!readerContainerRef.current) return;
+
+      // 等待DOM完全渲染
+      setTimeout(() => {
+        const container = readerContainerRef.current;
+        if (!container) return;
+
+        const windowWidth = window.innerWidth;
+
+        // 查找书页内容容器（带有mx-auto的元素）
+        const contentElement = container.querySelector('.mx-auto');
+
+        if (contentElement) {
+          const contentRect = contentElement.getBoundingClientRect();
+          const contentLeft = contentRect.left;
+          const contentRight = contentRect.right;
+          const leftMargin = contentLeft;
+          const rightMargin = windowWidth - contentRight;
+
+          // 悬浮工具条最小需要60px宽度空间
+          const minSpace = 60;
+
+          // 优先放在右侧空白区域
+          if (rightMargin > minSpace) {
+            // 放在右侧空白区域，稍微靠近内容边缘
+            const xPixels = contentRight + Math.min(rightMargin / 2, 40); // 距离内容边缘最多40px
+            const xPercent = (xPixels / windowWidth) * 100;
+            const yPercent = 50; // 垂直居中
+
+            setFloatingBarEdge('right');
+            setFloatingBarPosition({
+              x: Math.max(95, Math.min(99, 100 - xPercent)), // 转换为距右侧的百分比
+              y: yPercent
+            });
+          }
+          // 其次尝试左侧空白区域
+          else if (leftMargin > minSpace) {
+            const xPixels = contentLeft - Math.min(leftMargin / 2, 40);
+            const xPercent = (xPixels / windowWidth) * 100;
+            const yPercent = 50;
+
+            setFloatingBarEdge('left');
+            setFloatingBarPosition({
+              x: 100 - xPercent, // 距右侧的百分比
+              y: yPercent
+            });
+          }
+          // 如果两侧空白都不够，保持默认右侧中间位置
+          else {
+            setFloatingBarEdge('right');
+            setFloatingBarPosition({ x: 2, y: 50 }); // 紧贴右边缘，垂直居中
+          }
+        } else {
+          // 如果找不到内容元素，使用默认位置
+          setFloatingBarEdge('right');
+          setFloatingBarPosition({ x: 2, y: 50 });
+        }
+      }, 300); // 延迟300ms等待内容渲染
+    };
+
+    calculateSmartPosition();
+
+    // 监听窗口大小变化和布局模式变化，重新计算位置
+    window.addEventListener('resize', calculateSmartPosition);
+
+    return () => {
+      window.removeEventListener('resize', calculateSmartPosition);
+    };
+  }, [layoutMode]); // 当布局模式改变时重新计算
+
   // 保存书签
   const saveBookmarks = (newBookmarks: BookmarkData[]) => {
     setBookmarks(newBookmarks);
