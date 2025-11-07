@@ -44,7 +44,10 @@ export default function LoginModal({ onClose, onShowRegister }: LoginModalProps)
             <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
               <Lock className="w-5 h-5 text-blue-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white">登录</h2>
+            <div>
+              <h2 className="text-2xl font-bold text-white">登录</h2>
+              <p className="text-xs text-green-400">v2.0 - SuperAuth</p>
+            </div>
           </div>
           <button
             onClick={onClose}
