@@ -1,33 +1,26 @@
 # Dev Toolbox
 
-开发者工具箱 - 集成 Web/AI 开发工具和电子书阅读器
+简洁实用的 Web 和 AI 开发工具集合
 
 ## 功能特性
 
-### 📚 电子书阅读器
-- 支持 PDF、EPUB、TXT 等格式
-- 沉浸式阅读体验
-- 书架管理
-- 阅读进度保存
-
-### 🛠️ 开发者工具箱
 采用 iPad dock 风格的界面设计，包含 12 个实用工具：
 
-**Web 开发工具**
-- JSON 格式化 - 格式化/压缩 JSON 数据
-- Base64 编解码 - Base64 编码和解码
-- URL 编解码 - URL 编码和解码
-- 时间戳转换 - 时间戳与日期相互转换
-- 颜色转换 - HEX/RGB 颜色格式转换
-- 正则测试 - 正则表达式匹配测试
+### Web 开发工具
+- **JSON 格式化** - 格式化/压缩 JSON 数据
+- **Base64 编解码** - Base64 编码和解码
+- **URL 编解码** - URL 编码和解码
+- **时间戳转换** - 时间戳与日期相互转换
+- **颜色转换** - HEX/RGB 颜色格式转换
+- **正则测试** - 正则表达式匹配测试
 
-**AI 开发工具**
-- Token 计数 - 粗略估算文本的 token 数量
-- 提示词模板 - 常用 AI 提示词模板
-- Markdown 预览 - Markdown 实时预览
-- CSV to JSON - CSV 数据转 JSON 格式
-- UUID 生成器 - 批量生成 UUID
-- Hash 计算 - SHA-256 哈希计算
+### AI 开发工具
+- **Token 计数** - 粗略估算文本的 token 数量
+- **提示词模板** - 常用 AI 提示词模板
+- **Markdown 预览** - Markdown 实时预览
+- **CSV to JSON** - CSV 数据转 JSON 格式
+- **UUID 生成器** - 批量生成 UUID
+- **Hash 计算** - SHA-256 哈希计算
 
 ## 技术栈
 
@@ -35,10 +28,7 @@
 - **TypeScript** - 类型安全
 - **Vite** - 构建工具
 - **Tailwind CSS** - 样式
-- **Zustand** - 状态管理
 - **Lucide React** - 图标库
-- **PDF.js** - PDF 渲染
-- **ePub.js** - EPUB 渲染
 
 ## 快速开始
 
@@ -106,7 +96,6 @@ src/
 │   ├── ToolDetail.tsx  # 工具详情视图
 │   └── tools/          # 各个工具组件
 ├── config/             # 配置文件
-├── stores/             # 状态管理
 ├── types/              # TypeScript 类型
 └── App.tsx             # 主应用
 ```

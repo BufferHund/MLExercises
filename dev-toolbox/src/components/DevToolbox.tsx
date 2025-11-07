@@ -1,15 +1,11 @@
 import { useState } from 'react';
-import { ArrowLeft, Code, Sparkles } from 'lucide-react';
+import { Code, Sparkles } from 'lucide-react';
 import { tools } from '../config/tools';
 import ToolWidget from './ToolWidget';
 import ToolDetail from './ToolDetail';
 import type { ToolId } from '../types/tools';
 
-interface DevToolboxProps {
-  onBack?: () => void;
-}
-
-export default function DevToolbox({ onBack }: DevToolboxProps) {
+export default function DevToolbox() {
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
 
   const webTools = tools.filter((t) => t.category === 'web');
@@ -23,20 +19,9 @@ export default function DevToolbox({ onBack }: DevToolboxProps) {
     <div className="min-h-screen p-6 animate-slide-up">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-12">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="mb-6 flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl text-white transition-all duration-300"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              返回
-            </button>
-          )}
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-white mb-3">开发者工具箱</h1>
-            <p className="text-white/60">简洁实用的开发工具集合</p>
-          </div>
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl font-bold text-white mb-3">开发者工具箱</h1>
+          <p className="text-white/60">简洁实用的开发工具集合</p>
         </div>
 
         {/* Web Tools Section */}
