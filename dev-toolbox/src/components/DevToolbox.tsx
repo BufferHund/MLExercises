@@ -1,16 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LogIn, LogOut, Crown } from 'lucide-react';
 import { tools, toolCategories } from '../config/tools';
 import { useUserStore } from '../stores/useUserStore';
 import ToolWidget from './ToolWidget';
 import ToolDetail from './ToolDetail';
 import LoginModal from './LoginModal';
+import AISearch from './AISearch';
+import NewsWidget from './NewsWidget';
+import WeatherWidget from './WeatherWidget';
 import type { ToolId, ToolCategory } from '../types/tools';
 
 export default function DevToolbox() {
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const { isLoggedIn, isPremium, email, logout } = useUserStore();
+
+  // 检测是否首次加载
+  useEffect(() => {
+    const hasLoaded = sessionStorage.getItem('hasLoadedOnce');
+    if (hasLoaded) {
+      setIsFirstLoad(false);
+    } else {
+      sessionStorage.setItem('hasLoadedOnce', 'true');
+    }
+  }, []);
 
   const handleToolClick = (toolId: ToolId, requiresPremium: boolean) => {
     if (requiresPremium && !isPremium) {
@@ -78,10 +92,23 @@ export default function DevToolbox() {
           </div>
         </div>
 
+        {/* AI Search Bar */}
+        <AISearch />
+
+        {/* News and Weather */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+          <NewsWidget />
+          <WeatherWidget />
+        </div>
+
         {/* Tool Categories */}
         <div className="space-y-12">
           {toolsByCategory.map((group, idx) => (
-            <section key={group.category} className="animate-slide-up" style={{ animationDelay: `${idx * 100}ms` }}>
+            <section
+              key={group.category}
+              className={isFirstLoad ? "animate-slide-up" : ""}
+              style={isFirstLoad ? { animationDelay: `${idx * 100}ms` } : {}}
+            >
               <div className="flex items-center gap-3 mb-6">
                 <div className={`w-10 h-10 bg-gradient-to-br ${group.config.color} rounded-2xl flex items-center justify-center`}>
                   <group.config.icon className="w-5 h-5 text-white" />
@@ -96,7 +123,7 @@ export default function DevToolbox() {
                     key={tool.id}
                     tool={tool}
                     onClick={() => handleToolClick(tool.id, tool.isPremium || false)}
-                    delay={toolIdx * 50}
+                    delay={isFirstLoad ? toolIdx * 50 : 0}
                     showPremiumBadge={tool.isPremium}
                     isLocked={tool.isPremium && !isPremium}
                   />
