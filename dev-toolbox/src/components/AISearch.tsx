@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, Loader2, Brain, Search, Wand2, Image as ImageIcon, Settings as SettingsIcon } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { useUserStore } from '../stores/useUserStore';
 import UserSettings from './UserSettings';
 
@@ -175,7 +176,33 @@ export default function AISearch() {
                     {msg.role === 'assistant' && (
                       <Sparkles className="w-4 h-4 text-blue-400 flex-shrink-0 mt-1" />
                     )}
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    <div className="text-sm flex-1 prose prose-invert prose-sm max-w-none">
+                      {msg.role === 'assistant' ? (
+                        <ReactMarkdown
+                          components={{
+                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                            code: ({ children, className }) => {
+                              const isInline = !className;
+                              return isInline ? (
+                                <code className="bg-slate-700 px-1.5 py-0.5 rounded text-xs">{children}</code>
+                              ) : (
+                                <code className="block bg-slate-900 p-2 rounded text-xs overflow-x-auto">{children}</code>
+                              );
+                            },
+                            ul: ({ children }) => <ul className="list-disc list-inside mb-2">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal list-inside mb-2">{children}</ol>,
+                            li: ({ children }) => <li className="mb-1">{children}</li>,
+                            h1: ({ children }) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
+                            h2: ({ children }) => <h2 className="text-base font-bold mb-2">{children}</h2>,
+                            h3: ({ children }) => <h3 className="text-sm font-bold mb-1">{children}</h3>,
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      ) : (
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                      )}
+                    </div>
                   </div>
                   <span className="text-xs opacity-60 mt-1 block">
                     {msg.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}

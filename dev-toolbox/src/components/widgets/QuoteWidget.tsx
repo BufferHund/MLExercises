@@ -30,27 +30,29 @@ export default function QuoteWidget() {
 
   if (loading) {
     return (
-      <div className="glass rounded-xl p-4 shadow-glass flex items-center justify-center h-32">
+      <div className="glass rounded-xl p-4 shadow-glass flex items-center justify-center h-40">
         <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="glass rounded-xl p-4 shadow-glass">
+    <div className="glass rounded-xl p-4 shadow-glass h-40 flex flex-col">
       <div className="flex items-center gap-2 mb-3">
         <Quote className="w-4 h-4 text-purple-400" />
         <h3 className="text-sm font-medium text-white">每日一句</h3>
       </div>
 
-      {quote ? (
-        <div>
-          <p className="text-sm text-slate-200 italic mb-2">"{quote.text}"</p>
-          <p className="text-xs text-slate-400 text-right">— {quote.author}</p>
-        </div>
-      ) : (
-        <p className="text-xs text-slate-400">暂无内容</p>
-      )}
+      <div className="flex-1 flex items-center justify-center px-2">
+        {quote ? (
+          <div className="text-center">
+            <p className="text-sm text-slate-200 italic mb-3 leading-relaxed">"{quote.text}"</p>
+            <p className="text-xs text-slate-400">— {quote.author}</p>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400">暂无内容</p>
+        )}
+      </div>
     </div>
   );
 }

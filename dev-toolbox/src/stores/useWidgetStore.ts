@@ -15,7 +15,7 @@ interface WidgetState {
   widgets: Widget[];
   userLocation: { city: string; country: string; ip: string } | null;
   toggleWidget: (id: string) => void;
-  reorderWidgets: (widgets: Widget[]) => void;
+  reorderWidgets: (widgetIds: string[]) => void;
   setUserLocation: (location: { city: string; country: string; ip: string }) => void;
 }
 
@@ -42,8 +42,21 @@ export const useWidgetStore = create<WidgetState>()(
         }));
       },
 
-      reorderWidgets: (widgets: Widget[]) => {
-        set({ widgets });
+      reorderWidgets: (widgetIds: string[]) => {
+        set((state) => {
+          const widgetMap = new Map(state.widgets.map((w) => [w.id, w]));
+          const reorderedWidgets = widgetIds.map((id, index) => {
+            const widget = widgetMap.get(id);
+            return widget ? { ...widget, order: index } : null;
+          }).filter((w): w is Widget => w !== null);
+
+          // 保留未启用的widgets
+          const disabledWidgets = state.widgets
+            .filter((w) => !widgetIds.includes(w.id))
+            .map((w, index) => ({ ...w, order: reorderedWidgets.length + index }));
+
+          return { widgets: [...reorderedWidgets, ...disabledWidgets] };
+        });
       },
 
       setUserLocation: (location) => {

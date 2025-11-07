@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogIn, LogOut, Crown, Layout } from 'lucide-react';
+import { LogIn, LogOut, Crown, Layout, Grid } from 'lucide-react';
 import { tools, toolCategories } from '../config/tools';
 import { useUserStore } from '../stores/useUserStore';
 import ToolWidget from './ToolWidget';
@@ -8,12 +8,14 @@ import LoginModal from './LoginModal';
 import AISearch from './AISearch';
 import WidgetContainer from './WidgetContainer';
 import WidgetManager from './WidgetManager';
+import AllToolsModal from './AllToolsModal';
 import type { ToolId, ToolCategory } from '../types/tools';
 
 export default function DevToolbox() {
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   const [showWidgetManager, setShowWidgetManager] = useState(false);
+  const [showAllTools, setShowAllTools] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const { isLoggedIn, isPremium, email, logout } = useUserStore();
 
@@ -39,9 +41,9 @@ export default function DevToolbox() {
     return <ToolDetail toolId={activeTool} onClose={() => setActiveTool(null)} />;
   }
 
-  // 按分类组织工具
-  const categories: ToolCategory[] = ['basic', 'image', 'format', 'network', 'hash', 'conversion', 'string'];
-  const toolsByCategory = categories.map(cat => ({
+  // 主页只显示AI和图片工具
+  const homeCategories: ToolCategory[] = ['ai', 'image'];
+  const homeCategoryGroups = homeCategories.map(cat => ({
     category: cat,
     config: toolCategories[cat],
     tools: tools.filter(t => t.category === cat)
@@ -50,8 +52,8 @@ export default function DevToolbox() {
   // Debug: Log tool counts
   console.log('=== Dev Toolbox Debug ===');
   console.log('Total tools:', tools.length);
-  console.log('Categories:', toolsByCategory.length);
-  toolsByCategory.forEach(group => {
+  console.log('Home categories:', homeCategoryGroups.length);
+  homeCategoryGroups.forEach(group => {
     console.log(`${group.config.name}: ${group.tools.length} tools`);
   });
 
@@ -67,6 +69,14 @@ export default function DevToolbox() {
 
           {/* User Menu */}
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowAllTools(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl text-white transition-colors shadow-lg"
+              title="查看全部工具"
+            >
+              <Grid className="w-4 h-4" />
+              <span>全部工具</span>
+            </button>
             <button
               onClick={() => setShowWidgetManager(true)}
               className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 text-slate-300 transition-colors"
@@ -107,9 +117,9 @@ export default function DevToolbox() {
         {/* Widgets */}
         <WidgetContainer />
 
-        {/* Tool Categories */}
+        {/* Tool Categories - 只显示AI和图片工具 */}
         <div className="space-y-12">
-          {toolsByCategory.map((group, idx) => (
+          {homeCategoryGroups.map((group, idx) => (
             <section
               key={group.category}
               className={isFirstLoad ? "animate-slide-up" : ""}
@@ -145,6 +155,17 @@ export default function DevToolbox() {
 
       {/* Widget Manager */}
       {showWidgetManager && <WidgetManager onClose={() => setShowWidgetManager(false)} />}
+
+      {/* All Tools Modal */}
+      {showAllTools && (
+        <AllToolsModal
+          onClose={() => setShowAllTools(false)}
+          onToolClick={(toolId, isPremium) => {
+            setShowAllTools(false);
+            handleToolClick(toolId, isPremium);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -32,7 +32,7 @@ export default function WeatherWidget() {
 
   if (loading) {
     return (
-      <div className="glass rounded-xl p-4 shadow-glass flex items-center justify-center h-32">
+      <div className="glass rounded-xl p-4 shadow-glass flex items-center justify-center h-40">
         <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
       </div>
     );
@@ -40,30 +40,32 @@ export default function WeatherWidget() {
 
   if (!weather) {
     return (
-      <div className="glass rounded-xl p-4 shadow-glass h-32 flex items-center justify-center">
+      <div className="glass rounded-xl p-4 shadow-glass h-40 flex items-center justify-center">
         <p className="text-sm text-slate-400">暂无天气数据</p>
       </div>
     );
   }
 
   return (
-    <div className="glass rounded-xl p-4 shadow-glass">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Cloud className="w-4 h-4 text-blue-400" />
-          <span className="text-sm font-medium text-white">{userLocation?.city || '北京'}</span>
-        </div>
-        <div className="text-2xl font-bold text-white">{weather.temperature}°</div>
+    <div className="glass rounded-xl p-4 shadow-glass h-40 flex flex-col">
+      <div className="flex items-center gap-2 mb-3">
+        <Cloud className="w-4 h-4 text-blue-400" />
+        <span className="text-sm font-medium text-white">{userLocation?.city || '北京'}</span>
       </div>
-      <div className="text-xs text-slate-400">{weather.condition}</div>
-      <div className="mt-3 flex gap-3 text-xs">
-        <div>
-          <span className="text-slate-500">湿度</span>
-          <span className="ml-1 text-slate-300">{weather.humidity}%</span>
-        </div>
-        <div>
-          <span className="text-slate-500">风速</span>
-          <span className="ml-1 text-slate-300">{weather.windSpeed}km/h</span>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl font-bold text-white mb-2">{weather.temperature}°</div>
+          <div className="text-sm text-slate-300 mb-3">{weather.condition}</div>
+          <div className="flex gap-4 text-xs justify-center">
+            <div>
+              <span className="text-slate-500">湿度 </span>
+              <span className="text-slate-300">{weather.humidity}%</span>
+            </div>
+            <div>
+              <span className="text-slate-500">风速 </span>
+              <span className="text-slate-300">{weather.windSpeed}km/h</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

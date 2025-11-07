@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 
 export type ToolCategory =
+  | 'ai'              // AI工具
   | 'image'           // 图片工具
   | 'format'          // 格式化&压缩
   | 'network'         // 网络测试

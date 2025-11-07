@@ -2,11 +2,12 @@ import {
   Image, FileCode, Network, Lock, Binary, Type, Code2, Globe, Key, Repeat, FileText,
   Link, Clock, Palette, Search, Hash, MessageSquare, Table, Shield, Wifi, Database,
   FileJson, FileType, Code, Minimize, Eye, EyeOff, Calculator, RefreshCw,
-  ChevronRight, RotateCw
+  ChevronRight, RotateCw, Sparkles, Wand2, Bot
 } from 'lucide-react';
 import type { Tool, ToolCategory } from '../types/tools';
 
 export const toolCategories: Record<ToolCategory, { name: string; icon: any; color: string }> = {
+  ai: { name: 'AI工具', icon: Sparkles, color: 'from-violet-500 to-fuchsia-500' },
   image: { name: '图片工具', icon: Image, color: 'from-purple-500 to-pink-500' },
   format: { name: '格式化&压缩', icon: FileCode, color: 'from-blue-500 to-cyan-500' },
   network: { name: '网络测试', icon: Network, color: 'from-green-500 to-emerald-500' },
@@ -17,15 +18,23 @@ export const toolCategories: Record<ToolCategory, { name: string; icon: any; col
 };
 
 export const tools: Tool[] = [
-  // ========== 基础工具 (12个 - 免费) ==========
+  // ========== AI工具 (8个) ==========
+  { id: 'ai-chat', name: 'AI对话', icon: Sparkles, color: 'from-violet-500 to-purple-500', category: 'ai', description: 'AI助手' },
+  { id: 'token-counter', name: 'Token计数', icon: Hash, color: 'from-purple-500 to-fuchsia-500', category: 'ai', description: '计数' },
+  { id: 'prompt-template', name: '提示词模板', icon: MessageSquare, color: 'from-fuchsia-500 to-pink-500', category: 'ai', description: '模板' },
+  { id: 'prompt-optimizer', name: '提示词优化', icon: Wand2, color: 'from-pink-500 to-rose-500', category: 'ai', description: '优化', isPremium: true },
+  { id: 'text-summarize', name: '文本总结', icon: FileText, color: 'from-indigo-500 to-violet-500', category: 'ai', description: 'AI总结', isPremium: true },
+  { id: 'code-explain', name: '代码解释', icon: Code2, color: 'from-blue-500 to-indigo-500', category: 'ai', description: 'AI解释', isPremium: true },
+  { id: 'translate', name: 'AI翻译', icon: Globe, color: 'from-cyan-500 to-blue-500', category: 'ai', description: '翻译', isPremium: true },
+  { id: 'ai-assistant', name: 'AI助手', icon: Bot, color: 'from-violet-500 to-fuchsia-500', category: 'ai', description: '智能助手', isPremium: true },
+
+  // ========== 基础工具 (10个 - 免费) ==========
   { id: 'json-formatter', name: 'JSON格式化', icon: Code2, color: 'from-blue-500 to-cyan-500', category: 'basic', description: '格式化' },
   { id: 'base64', name: 'Base64', icon: Binary, color: 'from-purple-500 to-pink-500', category: 'basic', description: '编解码' },
   { id: 'url-encoder', name: 'URL编码', icon: Link, color: 'from-green-500 to-emerald-500', category: 'basic', description: '编解码' },
   { id: 'timestamp', name: '时间戳', icon: Clock, color: 'from-orange-500 to-red-500', category: 'basic', description: '转换' },
   { id: 'color-converter', name: '颜色转换', icon: Palette, color: 'from-pink-500 to-rose-500', category: 'basic', description: '转换' },
   { id: 'regex-tester', name: '正则测试', icon: Search, color: 'from-indigo-500 to-blue-500', category: 'basic', description: '测试' },
-  { id: 'token-counter', name: 'Token计数', icon: Hash, color: 'from-violet-500 to-purple-500', category: 'basic', description: '计数' },
-  { id: 'prompt-template', name: '提示词模板', icon: MessageSquare, color: 'from-cyan-500 to-teal-500', category: 'basic', description: '模板' },
   { id: 'markdown-preview', name: 'Markdown预览', icon: FileText, color: 'from-emerald-500 to-green-500', category: 'basic', description: '预览' },
   { id: 'csv-to-json', name: 'CSV转JSON', icon: Table, color: 'from-amber-500 to-orange-500', category: 'basic', description: '转换' },
   { id: 'uuid-generator', name: 'UUID生成', icon: Key, color: 'from-rose-500 to-pink-500', category: 'basic', description: '生成' },

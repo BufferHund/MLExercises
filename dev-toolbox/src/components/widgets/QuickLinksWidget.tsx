@@ -8,13 +8,13 @@ const links = [
 
 export default function QuickLinksWidget() {
   return (
-    <div className="glass rounded-xl p-4 shadow-glass">
+    <div className="glass rounded-xl p-4 shadow-glass h-40 flex flex-col">
       <div className="flex items-center gap-2 mb-3">
         <Link2 className="w-4 h-4 text-cyan-400" />
         <h3 className="text-sm font-medium text-white">快捷链接</h3>
       </div>
 
-      <div className="space-y-2">
+      <div className="flex-1 overflow-y-auto space-y-2">
         {links.map((link, idx) => (
           <a
             key={idx}

@@ -30,27 +30,29 @@ export default function NewsWidget() {
 
   if (loading) {
     return (
-      <div className="glass rounded-xl p-4 shadow-glass flex items-center justify-center h-32">
+      <div className="glass rounded-xl p-4 shadow-glass flex items-center justify-center h-40">
         <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="glass rounded-xl p-4 shadow-glass">
+    <div className="glass rounded-xl p-4 shadow-glass h-40 flex flex-col">
       <div className="flex items-center gap-2 mb-3">
         <Newspaper className="w-4 h-4 text-red-400" />
         <h3 className="text-sm font-medium text-white">科技新闻</h3>
       </div>
 
       {news.length === 0 ? (
-        <p className="text-xs text-slate-400">暂无新闻</p>
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-xs text-slate-400">暂无新闻</p>
+        </div>
       ) : (
-        <div className="space-y-2">
+        <div className="flex-1 overflow-y-auto space-y-2.5">
           {news.map((item, idx) => (
-            <div key={idx} className="text-xs">
-              <p className="text-slate-200 line-clamp-2 mb-1">{item.title}</p>
-              <div className="flex items-center gap-2 text-slate-500">
+            <div key={idx} className="text-xs pb-2 border-b border-slate-700/50 last:border-0">
+              <p className="text-slate-200 line-clamp-2 mb-1 leading-relaxed">{item.title}</p>
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
                 <span>{item.source}</span>
                 <span>•</span>
                 <span>{item.time}</span>
