@@ -3,7 +3,7 @@ export interface Book {
   id: string;
   title: string;
   author: string;
-  format: 'epub' | 'pdf';
+  format: 'epub' | 'pdf' | 'txt' | 'md' | 'mobi' | 'docx' | 'doc';
   progress: number;
   currentPage: number;
   totalPages: number;
@@ -19,7 +19,7 @@ export interface Bookmark {
   page: number;
   totalPages: number;
   timestamp: string;
-  format: 'epub' | 'pdf';
+  format: 'epub' | 'pdf' | 'txt' | 'md' | 'mobi' | 'docx' | 'doc';
   cfi?: string; // For EPUB
   note?: string;
 }

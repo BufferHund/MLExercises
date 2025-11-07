@@ -3,6 +3,8 @@ import { X, ChevronLeft, ChevronRight, Settings, Bookmark, ZoomIn, ZoomOut, Sear
 import PdfReader from './PdfReader';
 import EpubReader from './EpubReader';
 import TextReader from './TextReader';
+import DocsReader from './DocsReader';
+import MobiReader from './MobiReader';
 
 interface ImmersiveReaderProps {
   file: File;
@@ -605,6 +607,25 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
             onProgressChange={handleProgressChange}
           />
         );
+      case 'docx':
+      case 'doc':
+        return (
+          <DocsReader
+            file={file}
+            fontSize={fontSize}
+            theme={theme}
+            onProgressChange={handleProgressChange}
+          />
+        );
+      case 'mobi':
+        return (
+          <MobiReader
+            file={file}
+            fontSize={fontSize}
+            theme={theme}
+            onProgressChange={handleProgressChange}
+          />
+        );
       default:
         return (
           <div className="text-center py-16">
@@ -816,8 +837,8 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                 </div>
               )}
 
-              {/* EPUB/TXT字体大小控制 */}
-              {(fileType === 'epub' || fileType === 'txt' || fileType === 'md') && (
+              {/* EPUB/TXT/MOBI/DOCX字体大小控制 */}
+              {(fileType === 'epub' || fileType === 'txt' || fileType === 'md' || fileType === 'mobi' || fileType === 'docx' || fileType === 'doc') && (
                 <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${themeColors.hover}`}>
                   <button
                     onClick={() => setFontSize(12)}
@@ -1126,8 +1147,8 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                 </p>
               </div>
 
-              {/* 字体大小 (EPUB/TXT) */}
-              {(fileType === 'epub' || fileType === 'txt' || fileType === 'md') && (
+              {/* 字体大小 (EPUB/TXT/MOBI/DOCX) */}
+              {(fileType === 'epub' || fileType === 'txt' || fileType === 'md' || fileType === 'mobi' || fileType === 'docx' || fileType === 'doc') && (
                 <div>
                   <label className={`text-sm font-medium mb-2 block ${theme === 'dark' ? 'text-white/70' : 'text-gray-600'}`}>
                     字体大小: {fontSize}px

@@ -25,12 +25,12 @@ export default function FileUploader({ onFileSelect }: FileUploaderProps) {
       <input
         id="fileInput"
         type="file"
-        accept=".epub,.pdf,.txt,.mobi,.azw,.azw3,.docx,.md"
+        accept=".epub,.pdf,.txt,.mobi,.azw,.azw3,.docx,.doc,.md"
         className="hidden"
         onChange={handleFileChange}
       />
       <p className="text-center text-white/60 text-sm mt-5 font-medium">
-        支持 EPUB、PDF、TXT、MOBI、AZW3、DOCX、MD 格式 • 最大 500MB
+        支持 EPUB、PDF、TXT、MOBI、AZW3、DOCX、DOC、MD 格式 • 最大 500MB
       </p>
     </div>
   );
