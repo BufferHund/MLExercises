@@ -428,13 +428,17 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    // 检测鼠标是否靠近右侧悬浮栏区域
-    // 悬浮栏位置：右侧居中，给予150px的检测范围
+    const windowHeight = window.innerHeight;
     const windowWidth = window.innerWidth;
+
+    // 检测鼠标是否在顶部或底部区域（显示主控制栏的区域）
+    const isNearTopOrBottom = e.clientY < 100 || e.clientY > windowHeight - 100;
+
+    // 检测鼠标是否靠近右侧悬浮栏区域
     const isNearFloatingBar = e.clientX > windowWidth - 150; // 右侧150px范围
 
-    // 如果鼠标不在悬浮栏附近，则显示控制栏
-    if (!isNearFloatingBar) {
+    // 只有在接近顶部/底部，且不在悬浮栏附近时，才显示主控制栏
+    if (isNearTopOrBottom && !isNearFloatingBar) {
       setShowControls(true);
     }
   };
@@ -660,7 +664,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     >
       {/* 顶部控制栏 */}
       <div
-        className={`flex-shrink-0 transition-all duration-300 ${
+        className={`absolute top-0 left-0 right-0 z-[60] transition-all duration-300 ${
           zenMode ? 'hidden' : (showControls ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0')
         }`}
       >
@@ -721,7 +725,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       </div>
 
       {/* 主阅读区域 */}
-      <div ref={readerContainerRef} className={`relative z-50 flex-1 overflow-y-auto flex items-center justify-center ${themeColors.bg} ${themeColors.text} transition-colors duration-300 ${isPageFlipping ? 'animate-kindle-flip' : ''}`}>
+      <div ref={readerContainerRef} className={`absolute inset-0 z-10 overflow-y-auto flex items-center justify-center ${themeColors.bg} ${themeColors.text} transition-colors duration-300 ${isPageFlipping ? 'animate-kindle-flip' : ''}`}>
         {/* 原生PDF模式 - 完全占满 */}
         {fileType === 'pdf' && pdfDisplayMode === 'native' ? (
           <div className="w-full h-full">
@@ -743,7 +747,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
       {/* 底部控制栏 */}
       <div
-        className={`flex-shrink-0 transition-all duration-300 ${
+        className={`absolute bottom-0 left-0 right-0 z-[60] transition-all duration-300 ${
           zenMode ? 'hidden' : (showControls ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0')
         }`}
       >
