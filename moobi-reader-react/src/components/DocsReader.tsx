@@ -44,7 +44,7 @@ export default function DocsReader({ file, fontSize, theme, onProgressChange }: 
     };
 
     loadDocx();
-  }, [file, onProgressChange]);
+  }, [file]); // 只依赖file，避免因onProgressChange引用变化导致重复加载
 
   // 根据主题获取样式
   const getThemeStyles = () => {

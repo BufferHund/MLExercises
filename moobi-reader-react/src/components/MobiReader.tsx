@@ -33,12 +33,19 @@ export default function MobiReader({ file, fontSize, theme, onProgressChange }: 
 
   useEffect(() => {
     let effectId = Math.random().toString(36).substr(2, 9);
+    let isMounted = true;
     console.log(`🔵 [MOBI Effect #${effectId}] Starting to load MOBI file:`, file.name);
 
     const loadMobi = async () => {
+      // 等待 viewerRef 准备好
       if (!viewerRef.current) {
-        console.warn(`⚠️ [MOBI Effect #${effectId}] viewerRef not ready yet`);
-        return;
+        console.warn(`⚠️ [MOBI Effect #${effectId}] viewerRef not ready yet, retrying...`);
+        // 延迟一帧后重试
+        await new Promise(resolve => requestAnimationFrame(() => resolve(null)));
+        if (!isMounted || !viewerRef.current) {
+          console.warn(`⚠️ [MOBI Effect #${effectId}] Component unmounted or viewerRef still not ready`);
+          return;
+        }
       }
 
       try {
@@ -53,6 +60,12 @@ export default function MobiReader({ file, fontSize, theme, onProgressChange }: 
         // 注意：这主要适用于 KF8 格式的 MOBI 文件（基于 EPUB 的新格式）
         // 旧的 MOBI 格式可能无法正常工作
         const newBook = ePub(arrayBuffer);
+
+        if (!isMounted || !viewerRef.current) {
+          console.warn(`⚠️ [MOBI Effect #${effectId}] Component unmounted before rendering`);
+          newBook.destroy();
+          return;
+        }
 
         console.log(`🎨 [MOBI Effect #${effectId}] Creating rendition...`);
         const newRendition = newBook.renderTo(viewerRef.current, {
@@ -72,6 +85,13 @@ export default function MobiReader({ file, fontSize, theme, onProgressChange }: 
 
         console.log(`🚀 [MOBI Effect #${effectId}] Displaying book...`);
         await newRendition.display();
+
+        if (!isMounted) {
+          console.warn(`⚠️ [MOBI Effect #${effectId}] Component unmounted after display`);
+          newRendition.destroy();
+          newBook.destroy();
+          return;
+        }
 
         // 修复iframe sandbox问题
         newRendition.hooks.content.register((contents: any) => {
@@ -109,14 +129,17 @@ export default function MobiReader({ file, fontSize, theme, onProgressChange }: 
         }
       } catch (err) {
         console.error(`❌ [MOBI Effect #${effectId}] Error loading MOBI file:`, err);
-        setError('无法加载此 MOBI 文件。请注意：只有较新的 KF8 格式 MOBI 文件受支持。旧版 MOBI 格式可能无法正常显示。');
-        setLoading(false);
+        if (isMounted) {
+          setError('无法加载此 MOBI 文件。请注意：只有较新的 KF8 格式 MOBI 文件受支持。旧版 MOBI 格式可能无法正常显示。');
+          setLoading(false);
+        }
       }
     };
 
     loadMobi();
 
     return () => {
+      isMounted = false;
       console.log(`🧹 [MOBI Effect #${effectId}] Cleanup: destroying book and rendition...`);
       if (rendition) {
         rendition.destroy();
