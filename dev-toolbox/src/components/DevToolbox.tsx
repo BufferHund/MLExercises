@@ -32,14 +32,22 @@ export default function DevToolbox() {
     tools: tools.filter(t => t.category === cat)
   })).filter(group => group.tools.length > 0);
 
+  // Debug: Log tool counts
+  console.log('=== Dev Toolbox Debug ===');
+  console.log('Total tools:', tools.length);
+  console.log('Categories:', toolsByCategory.length);
+  toolsByCategory.forEach(group => {
+    console.log(`${group.config.name}: ${group.tools.length} tools`);
+  });
+
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div className="text-center flex-1">
-            <h1 className="text-4xl font-bold text-white mb-2">开发者工具箱</h1>
-            <p className="text-slate-400">简洁实用的开发工具集合</p>
+            <h1 className="text-4xl font-bold text-white mb-2">开发者工具箱 v2.0</h1>
+            <p className="text-slate-400">简洁实用的开发工具集合 - 76个工具7大分类</p>
           </div>
 
           {/* User Menu */}
