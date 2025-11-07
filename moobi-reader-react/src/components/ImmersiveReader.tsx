@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { X, ChevronLeft, ChevronRight, Settings, Bookmark, ZoomIn, ZoomOut, Search, Highlighter, Sun, Moon } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Settings, Bookmark, ZoomIn, ZoomOut, Search, Highlighter, Sun, Moon, Minimize2, Menu } from 'lucide-react';
 import PdfReader from './PdfReader';
 import EpubReader from './EpubReader';
 import TextReader from './TextReader';
@@ -73,11 +73,16 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
   const [isPageFlipping, setIsPageFlipping] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [bookScale, setBookScale] = useState(1.0); // 书页缩放比例，1.0为默认大小（最小）
+  const [floatingBarPosition, setFloatingBarPosition] = useState({ x: 0, y: 50 }); // 悬浮栏位置，x为距右侧百分比，y为距顶部百分比
+  const [isDraggingFloatingBar, setIsDraggingFloatingBar] = useState(false);
 
   // Refs
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const readerContainerRef = useRef<HTMLDivElement>(null);
+  const floatingBarRef = useRef<HTMLDivElement>(null);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const dragStartBarPos = useRef({ x: 0, y: 0 });
   const sessionStartTime = useRef(Date.now());
   const readingTimeInterval = useRef<NodeJS.Timeout | null>(null);
 
@@ -442,6 +447,64 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       setShowControls(true);
     }
   };
+
+  // 悬浮栏拖动处理
+  const handleFloatingBarMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingFloatingBar(true);
+    dragStartPos.current = { x: e.clientX, y: e.clientY };
+    dragStartBarPos.current = { ...floatingBarPosition };
+  };
+
+  const handleFloatingBarTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    setIsDraggingFloatingBar(true);
+    const touch = e.touches[0];
+    dragStartPos.current = { x: touch.clientX, y: touch.clientY };
+    dragStartBarPos.current = { ...floatingBarPosition };
+  };
+
+  // 拖动移动处理
+  useEffect(() => {
+    if (!isDraggingFloatingBar) return;
+
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+      const deltaX = clientX - dragStartPos.current.x;
+      const deltaY = clientY - dragStartPos.current.y;
+
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+
+      // 计算新位置（百分比）
+      const deltaXPercent = (deltaX / windowWidth) * 100;
+      const deltaYPercent = (deltaY / windowHeight) * 100;
+
+      const newX = Math.max(0, Math.min(95, dragStartBarPos.current.x - deltaXPercent)); // x是距右侧的百分比
+      const newY = Math.max(5, Math.min(95, dragStartBarPos.current.y + deltaYPercent)); // y是距顶部的百分比
+
+      setFloatingBarPosition({ x: newX, y: newY });
+    };
+
+    const handleEnd = () => {
+      setIsDraggingFloatingBar(false);
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchmove', handleMove);
+    window.addEventListener('touchend', handleEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleEnd);
+    };
+  }, [isDraggingFloatingBar]);
 
   const handleNextPage = () => {
     // 触发Kindle风格的翻页动画
@@ -925,13 +988,61 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         </div>
       </div>
 
-      {/* 常驻浮动控制栏 - 右侧居中胶囊式 - 只在主控制栏隐藏时显示 */}
+      {/* 常驻浮动控制栏 - 可拖动胶囊式 - 只在主控制栏隐藏时显示 */}
       {!zenMode && !showControls && (
-        <div className={`fixed right-6 top-1/2 -translate-y-1/2 z-40 ${themeColors.controlBg} backdrop-blur-xl rounded-full shadow-2xl border ${themeColors.border} p-2 animate-scale-in`}>
+        <div
+          ref={floatingBarRef}
+          className={`fixed z-40 ${themeColors.controlBg} backdrop-blur-xl rounded-full shadow-2xl border ${themeColors.border} p-2 animate-scale-in ${isDraggingFloatingBar ? 'cursor-grabbing scale-105' : 'cursor-grab'} touch-none select-none`}
+          style={{
+            right: `${floatingBarPosition.x}%`,
+            top: `${floatingBarPosition.y}%`,
+            transform: 'translate(0, -50%)',
+            transition: isDraggingFloatingBar ? 'none' : 'all 0.2s ease-out',
+          }}
+          onMouseDown={handleFloatingBarMouseDown}
+          onTouchStart={handleFloatingBarTouchStart}
+        >
           <div className="flex flex-col gap-2">
+            {/* 显示主控制栏 */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowControls(true);
+              }}
+              className={`p-3 ${themeColors.hover} rounded-full transition-all hover:scale-110 flex items-center justify-center`}
+              title="显示控制栏"
+            >
+              <Menu className={`w-5 h-5 ${themeColors.text}`} />
+            </button>
+
+            {/* 分隔线 */}
+            <div className={`h-px mx-1 ${themeColors.border}`} />
+
+            {/* 退出全屏（仅在全屏时显示） */}
+            {isFullscreen && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFullscreen();
+                  }}
+                  className={`p-3 ${themeColors.hover} rounded-full transition-all hover:scale-110 flex items-center justify-center`}
+                  title="退出全屏"
+                >
+                  <Minimize2 className={`w-5 h-5 ${themeColors.text}`} />
+                </button>
+
+                {/* 分隔线 */}
+                <div className={`h-px mx-1 ${themeColors.border}`} />
+              </>
+            )}
+
             {/* 上一页 */}
             <button
-              onClick={handlePrevPage}
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrevPage();
+              }}
               className={`p-3 ${themeColors.hover} rounded-full transition-all hover:scale-110 flex items-center justify-center`}
               title="上一页 (←)"
             >
@@ -943,7 +1054,10 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
             {/* 下一页 */}
             <button
-              onClick={handleNextPage}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNextPage();
+              }}
               className={`p-3 ${themeColors.hover} rounded-full transition-all hover:scale-110 flex items-center justify-center`}
               title="下一页 (→)"
             >
@@ -955,7 +1069,10 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
             {/* 书签 */}
             <button
-              onClick={handleAddBookmark}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddBookmark();
+              }}
               className={`p-3 ${themeColors.hover} rounded-full transition-all hover:scale-110 flex items-center justify-center`}
               title="添加书签"
             >
@@ -967,7 +1084,10 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
 
             {/* 设置 */}
             <button
-              onClick={() => setShowSettings(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowSettings(true);
+              }}
               className={`p-3 ${themeColors.hover} rounded-full transition-all hover:scale-110 flex items-center justify-center`}
               title="设置"
             >
