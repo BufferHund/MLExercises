@@ -70,8 +70,7 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
   const [showSearch, setShowSearch] = useState(false);
   const [isPageFlipping, setIsPageFlipping] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [bookScale, setBookScale] = useState(1.0); // 书页缩放比例，影响高度和宽度
-  const wheelDeltaAccumulator = useRef(0); // 滚轮delta累积器
+  const [bookScale, setBookScale] = useState(1.0); // 书页缩放比例，1.0为默认大小（最小）
 
   // Refs
   const touchStartX = useRef(0);
@@ -370,9 +369,9 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
     };
   }, []);
 
-  // 滚轮缩放支持 - 只用于调整书页大小
+  // 滚轮翻页支持
   useEffect(() => {
-    // 原生PDF模式不使用滚轮缩放
+    // 原生PDF模式不需要滚轮翻页
     if (fileType === 'pdf' && pdfDisplayMode === 'native') return;
 
     const container = readerContainerRef.current;
@@ -384,32 +383,26 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         return;
       }
 
-      // 滚轮直接调整书页大小，无需按Ctrl
-      e.preventDefault();
+      const delta = e.deltaY;
 
-      // 累积滚轮delta，需要累积到500才触发一次缩放
-      wheelDeltaAccumulator.current += e.deltaY;
-
-      if (Math.abs(wheelDeltaAccumulator.current) >= 500) {
-        const scaleChange = wheelDeltaAccumulator.current > 0 ? -0.1 : 0.1;
-        const newScale = Math.max(0.5, Math.min(2.0, bookScale + scaleChange));
-
-        if (newScale !== bookScale) {
-          setBookScale(newScale);
-          console.log(`📏 Scale changed: ${newScale.toFixed(1)}x`);
+      // 滚动阈值：需要一定的滚动量才触发翻页
+      if (Math.abs(delta) > 50) {
+        if (delta > 0) {
+          // 向下滚动 = 下一页
+          handleNextPage();
+        } else {
+          // 向上滚动 = 上一页
+          handlePrevPage();
         }
-
-        // 重置累积器
-        wheelDeltaAccumulator.current = 0;
       }
     };
 
-    container.addEventListener('wheel', handleWheel, { passive: false });
+    container.addEventListener('wheel', handleWheel);
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
     };
-  }, [fileType, pdfDisplayMode, bookScale]);
+  }, [fileType, pdfDisplayMode]);
 
   // 自动隐藏控制栏
   useEffect(() => {
@@ -799,48 +792,48 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                 <Highlighter className={`w-5 h-5 ${themeColors.text}`} />
               </button>
 
-              {/* EPUB/TXT字体控制 - 12、16、20、24、28 */}
-              {(fileType === 'epub' || fileType === 'txt' || fileType === 'md') && (
+              {/* 书页大小控制 - 适用于所有非原生PDF模式 */}
+              {!(fileType === 'pdf' && pdfDisplayMode === 'native') && (
                 <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${themeColors.hover}`}>
                   <button
-                    onClick={() => setFontSize(12)}
-                    className={`px-2 py-1 text-xs font-medium transition-colors rounded ${fontSize === 12 ? 'bg-black/20' : ''} ${themeColors.text}`}
-                    title="最小"
+                    onClick={() => setBookScale(1.0)}
+                    className={`px-2 py-1 text-xs font-medium transition-colors rounded ${bookScale === 1.0 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="默认"
                   >
-                    12
+                    100%
                   </button>
                   <button
-                    onClick={() => setFontSize(16)}
-                    className={`px-2 py-1 text-sm font-medium transition-colors rounded ${fontSize === 16 ? 'bg-black/20' : ''} ${themeColors.text}`}
-                    title="小"
+                    onClick={() => setBookScale(1.2)}
+                    className={`px-2 py-1 text-sm font-medium transition-colors rounded ${bookScale === 1.2 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="稍大"
                   >
-                    16
+                    120%
                   </button>
                   <button
-                    onClick={() => setFontSize(20)}
-                    className={`px-2 py-1 text-base font-medium transition-colors rounded ${fontSize === 20 ? 'bg-black/20' : ''} ${themeColors.text}`}
-                    title="中"
+                    onClick={() => setBookScale(1.4)}
+                    className={`px-2 py-1 text-base font-medium transition-colors rounded ${bookScale === 1.4 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="较大"
                   >
-                    20
+                    140%
                   </button>
                   <button
-                    onClick={() => setFontSize(24)}
-                    className={`px-2 py-1 text-lg font-medium transition-colors rounded ${fontSize === 24 ? 'bg-black/20' : ''} ${themeColors.text}`}
-                    title="大"
+                    onClick={() => setBookScale(1.6)}
+                    className={`px-2 py-1 text-lg font-medium transition-colors rounded ${bookScale === 1.6 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="很大"
                   >
-                    24
+                    160%
                   </button>
                   <button
-                    onClick={() => setFontSize(28)}
-                    className={`px-2 py-1 text-xl font-medium transition-colors rounded ${fontSize === 28 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    onClick={() => setBookScale(1.8)}
+                    className={`px-2 py-1 text-xl font-medium transition-colors rounded ${bookScale === 1.8 ? 'bg-black/20' : ''} ${themeColors.text}`}
                     title="最大"
                   >
-                    28
+                    180%
                   </button>
                 </div>
               )}
 
-              {/* PDF缩放控制 */}
+              {/* PDF缩放控制 - 仅自定义PDF模式显示 */}
               {fileType === 'pdf' && pdfDisplayMode === 'custom' && (
                 <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${themeColors.hover}`}>
                   <button
