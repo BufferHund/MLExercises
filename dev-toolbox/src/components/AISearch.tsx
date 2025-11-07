@@ -19,15 +19,24 @@ export default function AISearch() {
   const [isLoading, setIsLoading] = useState(false);
   const [advancedMode, setAdvancedMode] = useState<AdvancedMode>('normal');
   const [showSettings, setShowSettings] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { isPremium, geminiConfig } = useUserStore();
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // 只在消息容器内滚动，不影响整个页面
+    if (messagesContainerRef.current) {
+      setTimeout(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
+      }, 100);
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
   }, [messages]);
 
   const callGeminiAPI = async (userMessage: string, mode: AdvancedMode) => {
@@ -159,7 +168,7 @@ export default function AISearch() {
       <div className="glass rounded-3xl shadow-glass-lg overflow-hidden">
         {/* Messages Area */}
         {messages.length > 0 && (
-          <div className="max-h-96 overflow-y-auto p-6 space-y-4">
+          <div ref={messagesContainerRef} className="max-h-96 overflow-y-auto p-6 space-y-4 scroll-smooth">
             {messages.map((msg, idx) => (
               <div
                 key={idx}
@@ -217,7 +226,6 @@ export default function AISearch() {
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
           </div>
         )}
 

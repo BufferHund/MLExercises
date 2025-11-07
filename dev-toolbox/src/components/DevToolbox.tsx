@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { LogIn, LogOut, Crown, Layout, Grid } from 'lucide-react';
 import { tools, toolCategories } from '../config/tools';
 import { useUserStore } from '../stores/useUserStore';
+import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import ToolWidget from './ToolWidget';
 import ToolDetail from './ToolDetail';
 import LoginModal from './LoginModal';
@@ -18,6 +19,7 @@ export default function DevToolbox() {
   const [showAllTools, setShowAllTools] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const { isLoggedIn, isPremium, email, logout } = useUserStore();
+  const { savePosition } = useScrollRestoration('dev-toolbox-main');
 
   // 检测是否首次加载
   useEffect(() => {
@@ -34,6 +36,8 @@ export default function DevToolbox() {
       setShowLogin(true);
       return;
     }
+    // 保存当前滚动位置
+    savePosition();
     setActiveTool(toolId);
   };
 

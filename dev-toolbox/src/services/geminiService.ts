@@ -1,3 +1,5 @@
+import { cacheService, CACHE_DURATION, CACHE_KEYS } from './cacheService';
+
 // Gemini API服务
 export async function callGemini(apiKey: string, prompt: string) {
   try {
@@ -36,8 +38,15 @@ export async function callGemini(apiKey: string, prompt: string) {
   }
 }
 
-// 获取天气数据
+// 获取天气数据（带缓存）
 export async function getWeatherFromGemini(apiKey: string, city: string) {
+  // 检查缓存
+  const cacheKey = CACHE_KEYS.WEATHER(city);
+  const cached = cacheService.get<any>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   const prompt = `请提供${city}今天的天气信息，以JSON格式返回，包含以下字段：
 {
   "temperature": 温度(数字),
@@ -56,7 +65,10 @@ export async function getWeatherFromGemini(apiKey: string, city: string) {
     // 尝试从响应中提取JSON
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const weatherData = JSON.parse(jsonMatch[0]);
+      // 缓存1小时
+      cacheService.set(cacheKey, weatherData, CACHE_DURATION.ONE_HOUR);
+      return weatherData;
     }
   } catch (e) {
     console.error('Failed to parse weather JSON:', e);
@@ -74,9 +86,16 @@ export async function getWeatherFromGemini(apiKey: string, city: string) {
   };
 }
 
-// 获取新闻数据
+// 获取新闻数据（带缓存和轮播）
 export async function getNewsFromGemini(apiKey: string) {
-  const prompt = `请提供4条今天的科技新闻，以JSON数组格式返回，每条新闻包含：
+  // 检查缓存
+  const cached = cacheService.get<any[]>(CACHE_KEYS.NEWS);
+  if (cached) {
+    return cached;
+  }
+
+  // 一次性请求10条新闻，可以轮播展示
+  const prompt = `请提供10条今天的科技和AI领域新闻，以JSON数组格式返回，每条新闻包含：
 [
   {
     "title": "新闻标题",
@@ -91,7 +110,10 @@ export async function getNewsFromGemini(apiKey: string) {
   try {
     const jsonMatch = response.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const newsData = JSON.parse(jsonMatch[0]);
+      // 缓存5分钟
+      cacheService.set(CACHE_KEYS.NEWS, newsData, CACHE_DURATION.FIVE_MINUTES);
+      return newsData;
     }
   } catch (e) {
     console.error('Failed to parse news JSON:', e);
