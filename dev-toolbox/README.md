@@ -40,7 +40,39 @@
 - **PDF.js** - PDF 渲染
 - **ePub.js** - EPUB 渲染
 
-## 开发
+## 快速开始
+
+### 使用 Docker（推荐）
+
+**生产环境**
+```bash
+# 构建并运行
+docker-compose up -d
+
+# 访问 http://localhost:3000
+```
+
+**开发环境**
+```bash
+# 启动开发服务器（热重载）
+docker-compose --profile dev up dev-toolbox-dev
+
+# 访问 http://localhost:5173
+```
+
+**常用命令**
+```bash
+# 停止容器
+docker-compose down
+
+# 重新构建
+docker-compose build
+
+# 查看日志
+docker-compose logs -f
+```
+
+### 本地开发
 
 ```bash
 # 安装依赖

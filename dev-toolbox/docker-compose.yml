@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # 生产环境
+  dev-toolbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dev-toolbox
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+  # 开发环境
+  dev-toolbox-dev:
+    image: node:20-alpine
+    container_name: dev-toolbox-dev
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev -- --host"
+    environment:
+      - NODE_ENV=development
+    stdin_open: true
+    tty: true
+    profiles:
+      - dev
