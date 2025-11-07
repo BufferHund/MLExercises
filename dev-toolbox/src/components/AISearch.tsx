@@ -1,19 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Loader2 } from 'lucide-react';
+import { Send, Sparkles, Loader2, Brain, Search, Wand2, Image as ImageIcon, Settings as SettingsIcon } from 'lucide-react';
 import { useUserStore } from '../stores/useUserStore';
+import UserSettings from './UserSettings';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  thinking?: string; // 深度思考过程
 }
+
+type AdvancedMode = 'normal' | 'deep-thinking' | 'cot' | 'deep-search' | 'image-gen';
 
 export default function AISearch() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [advancedMode, setAdvancedMode] = useState<AdvancedMode>('normal');
+  const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { apiConfig } = useUserStore();
+  const { isPremium, geminiConfig } = useUserStore();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -23,8 +29,81 @@ export default function AISearch() {
     scrollToBottom();
   }, [messages]);
 
+  const callGeminiAPI = async (userMessage: string, mode: AdvancedMode) => {
+    if (!geminiConfig.apiKey) {
+      return '请先在设置中配置您的 Gemini API Key';
+    }
+
+    try {
+      const apiKey = geminiConfig.apiKey;
+      const model = geminiConfig.model;
+
+      // 根据模式构建不同的提示词
+      let systemPrompt = '';
+      switch (mode) {
+        case 'deep-thinking':
+          systemPrompt = '请进行深度思考，详细分析问题的各个方面，给出全面的解答。在回答前，请先展示你的思考过程。';
+          break;
+        case 'cot':
+          systemPrompt = '请使用思维链(Chain of Thought)方法，一步步推理和解答问题。';
+          break;
+        case 'deep-search':
+          systemPrompt = '请进行深度搜索和分析，提供详细的背景信息和多角度的观点。';
+          break;
+        case 'image-gen':
+          return '图片生成功能开发中，即将上线...';
+        default:
+          systemPrompt = '';
+      }
+
+      const fullPrompt = systemPrompt ? `${systemPrompt}\n\n用户问题: ${userMessage}` : userMessage;
+
+      // 调用 Gemini API
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: fullPrompt,
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Gemini API Error:', error);
+        return `API调用失败: ${error.error?.message || 'Unknown error'}`;
+      }
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '无法获取回复';
+
+      return text;
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+      return `调用失败: ${error instanceof Error ? error.message : '未知错误'}`;
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
+
+    // 检查高级功能权限
+    if (!isPremium && advancedMode !== 'normal') {
+      alert('高级功能仅限会员使用，请升级到高级会员或切换到普通模式');
+      return;
+    }
 
     const userMessage: Message = {
       role: 'user',
@@ -36,16 +115,26 @@ export default function AISearch() {
     setInput('');
     setIsLoading(true);
 
-    // Mock API call - 将来替换为真实API
-    setTimeout(() => {
+    try {
+      const responseText = await callGeminiAPI(userMessage.content, advancedMode);
+
       const assistantMessage: Message = {
         role: 'assistant',
-        content: `这是一个模拟回复。您的问题是: "${userMessage.content}"\n\n实际使用时，这里将调用 ${apiConfig.apiEndpoint} 并使用您的API密钥进行请求。`,
+        content: responseText,
         timestamp: new Date(),
       };
+
       setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: '抱歉，处理您的请求时出现错误。请稍后再试。',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -54,6 +143,14 @@ export default function AISearch() {
       handleSend();
     }
   };
+
+  const advancedModes = [
+    { id: 'normal' as AdvancedMode, name: '普通', icon: Sparkles, premium: false },
+    { id: 'deep-thinking' as AdvancedMode, name: '深度思考', icon: Brain, premium: true },
+    { id: 'cot' as AdvancedMode, name: 'COT思维链', icon: Wand2, premium: true },
+    { id: 'deep-search' as AdvancedMode, name: '深度搜索', icon: Search, premium: true },
+    { id: 'image-gen' as AdvancedMode, name: 'AI绘图', icon: ImageIcon, premium: true },
+  ];
 
   return (
     <div className="w-full max-w-4xl mx-auto mb-8">
@@ -97,13 +194,59 @@ export default function AISearch() {
           </div>
         )}
 
+        {/* Advanced Mode Selector */}
+        <div className="px-6 pt-6 pb-3 border-t border-white/5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs text-slate-400">功能模式</span>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-colors"
+            >
+              <SettingsIcon className="w-3 h-3" />
+              设置
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {advancedModes.map((mode) => {
+              const Icon = mode.icon;
+              const isActive = advancedMode === mode.id;
+              const isLocked = mode.premium && !isPremium;
+
+              return (
+                <button
+                  key={mode.id}
+                  onClick={() => !isLocked && setAdvancedMode(mode.id)}
+                  disabled={isLocked}
+                  className={`
+                    flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                    ${isActive
+                      ? 'bg-blue-600 text-white'
+                      : isLocked
+                      ? 'bg-slate-800/50 text-slate-500 border border-slate-700 cursor-not-allowed'
+                      : 'bg-slate-800/50 text-slate-300 border border-slate-700 hover:border-slate-600'
+                    }
+                  `}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {mode.name}
+                  {isLocked && <span className="ml-1">🔒</span>}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-2 text-xs text-slate-500">
+            当前模型: {geminiConfig.model === 'gemini-2.5-pro' ? 'Gemini 2.5 Pro (高级)' : 'Gemini 2.5 Flash (基础)'}
+            {!geminiConfig.apiKey && ' - ⚠️ 未配置API Key'}
+          </div>
+        </div>
+
         {/* Input Area */}
         <div className="p-6 border-t border-white/5">
           <div className="flex items-end gap-3">
             <div className="flex-1 relative">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="w-4 h-4 text-blue-400" />
-                <span className="text-sm text-slate-400">AI 智能助手</span>
+                <span className="text-sm text-slate-400">Gemini AI 助手</span>
               </div>
               <textarea
                 value={input}
@@ -117,7 +260,7 @@ export default function AISearch() {
             </div>
             <button
               onClick={handleSend}
-              disabled={!input.trim() || isLoading}
+              disabled={!input.trim() || isLoading || !geminiConfig.apiKey}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:cursor-not-allowed rounded-xl text-white font-medium transition-colors flex items-center gap-2"
             >
               {isLoading ? (
@@ -130,6 +273,9 @@ export default function AISearch() {
           </div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && <UserSettings onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

@@ -1,19 +1,19 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface APIConfig {
-  apiEndpoint: string;
+interface GeminiConfig {
   apiKey: string;
+  model: 'gemini-2.5-flash' | 'gemini-2.5-pro';
 }
 
 interface UserState {
   isLoggedIn: boolean;
   isPremium: boolean;
   email: string | null;
-  apiConfig: APIConfig;
+  geminiConfig: GeminiConfig;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  updateApiConfig: (config: Partial<APIConfig>) => void;
+  updateGeminiConfig: (config: Partial<GeminiConfig>) => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -22,10 +22,10 @@ export const useUserStore = create<UserState>()(
       isLoggedIn: false,
       isPremium: false,
       email: null,
-      // Mock API配置 - 实际使用时从后端获取
-      apiConfig: {
-        apiEndpoint: 'https://api.openai.com/v1/chat/completions',
-        apiKey: 'sk-mock-key-xxxxxxxxxxxxxxxx',
+      // Gemini API配置
+      geminiConfig: {
+        apiKey: '',
+        model: 'gemini-2.5-flash',
       },
 
       login: async (email: string, password: string) => {
@@ -35,38 +35,32 @@ export const useUserStore = create<UserState>()(
           // premium@example.com 是付费用户
           const isPremium = email === 'premium@example.com';
 
-          // Mock: 不同用户有不同的API配置
-          const apiConfig = isPremium
-            ? {
-                apiEndpoint: 'https://api.openai.com/v1/chat/completions',
-                apiKey: 'sk-premium-key-xxxxxxxxxxxxxxxx',
-              }
-            : {
-                apiEndpoint: 'https://api.openai.com/v1/chat/completions',
-                apiKey: 'sk-free-key-xxxxxxxxxxxxxxxx',
-              };
+          // 根据用户类型设置默认模型
+          const model = isPremium ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
 
-          set({ isLoggedIn: true, isPremium, email, apiConfig });
+          set((state) => ({
+            isLoggedIn: true,
+            isPremium,
+            email,
+            geminiConfig: { ...state.geminiConfig, model: model as 'gemini-2.5-flash' | 'gemini-2.5-pro' },
+          }));
           return true;
         }
         return false;
       },
 
       logout: () => {
-        set({
+        set((state) => ({
           isLoggedIn: false,
           isPremium: false,
           email: null,
-          apiConfig: {
-            apiEndpoint: 'https://api.openai.com/v1/chat/completions',
-            apiKey: 'sk-mock-key-xxxxxxxxxxxxxxxx',
-          }
-        });
+          geminiConfig: { ...state.geminiConfig, model: 'gemini-2.5-flash' },
+        }));
       },
 
-      updateApiConfig: (config: Partial<APIConfig>) => {
+      updateGeminiConfig: (config: Partial<GeminiConfig>) => {
         set((state) => ({
-          apiConfig: { ...state.apiConfig, ...config },
+          geminiConfig: { ...state.geminiConfig, ...config },
         }));
       },
     }),
