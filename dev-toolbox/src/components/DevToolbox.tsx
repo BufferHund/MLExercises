@@ -1,69 +1,106 @@
 import { useState } from 'react';
-import { Code, Sparkles } from 'lucide-react';
-import { tools } from '../config/tools';
+import { LogIn, LogOut, Crown } from 'lucide-react';
+import { tools, toolCategories } from '../config/tools';
+import { useUserStore } from '../stores/useUserStore';
 import ToolWidget from './ToolWidget';
 import ToolDetail from './ToolDetail';
-import type { ToolId } from '../types/tools';
+import LoginModal from './LoginModal';
+import type { ToolId, ToolCategory } from '../types/tools';
 
 export default function DevToolbox() {
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const { isLoggedIn, isPremium, email, logout } = useUserStore();
 
-  const webTools = tools.filter((t) => t.category === 'web');
-  const aiTools = tools.filter((t) => t.category === 'ai');
+  const handleToolClick = (toolId: ToolId, requiresPremium: boolean) => {
+    if (requiresPremium && !isPremium) {
+      setShowLogin(true);
+      return;
+    }
+    setActiveTool(toolId);
+  };
 
   if (activeTool) {
     return <ToolDetail toolId={activeTool} onClose={() => setActiveTool(null)} />;
   }
 
+  // 按分类组织工具
+  const categories: ToolCategory[] = ['basic', 'image', 'format', 'network', 'hash', 'conversion', 'string'];
+  const toolsByCategory = categories.map(cat => ({
+    category: cat,
+    config: toolCategories[cat],
+    tools: tools.filter(t => t.category === cat)
+  })).filter(group => group.tools.length > 0);
+
   return (
-    <div className="min-h-screen p-6 animate-slide-up">
+    <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-white mb-3">开发者工具箱</h1>
-          <p className="text-white/60">简洁实用的开发工具集合</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div className="text-center flex-1">
+            <h1 className="text-4xl font-bold text-white mb-2">开发者工具箱</h1>
+            <p className="text-slate-400">简洁实用的开发工具集合</p>
+          </div>
+
+          {/* User Menu */}
+          <div className="flex items-center gap-3">
+            {isLoggedIn ? (
+              <>
+                <div className="flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-xl border border-slate-700">
+                  {isPremium && <Crown className="w-4 h-4 text-yellow-500" />}
+                  <span className="text-sm text-slate-300">{email}</span>
+                </div>
+                <button
+                  onClick={logout}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 text-slate-300 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  退出
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setShowLogin(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-white transition-colors"
+              >
+                <LogIn className="w-4 h-4" />
+                登录
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Web Tools Section */}
-        <section className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center">
-              <Code className="w-5 h-5 text-white" />
-            </div>
-            <h2 className="text-2xl font-semibold text-white">Web 开发</h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {webTools.map((tool, index) => (
-              <ToolWidget
-                key={tool.id}
-                tool={tool}
-                onClick={() => setActiveTool(tool.id as ToolId)}
-                delay={index * 50}
-              />
-            ))}
-          </div>
-        </section>
+        {/* Tool Categories */}
+        <div className="space-y-12">
+          {toolsByCategory.map((group, idx) => (
+            <section key={group.category} className="animate-slide-up" style={{ animationDelay: `${idx * 100}ms` }}>
+              <div className="flex items-center gap-3 mb-6">
+                <div className={`w-10 h-10 bg-gradient-to-br ${group.config.color} rounded-2xl flex items-center justify-center`}>
+                  <group.config.icon className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-2xl font-semibold text-white">{group.config.name}</h2>
+                <span className="text-sm text-slate-500">({group.tools.length})</span>
+              </div>
 
-        {/* AI Tools Section */}
-        <section>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <h2 className="text-2xl font-semibold text-white">AI 开发</h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {aiTools.map((tool, index) => (
-              <ToolWidget
-                key={tool.id}
-                tool={tool}
-                onClick={() => setActiveTool(tool.id as ToolId)}
-                delay={index * 50}
-              />
-            ))}
-          </div>
-        </section>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                {group.tools.map((tool, toolIdx) => (
+                  <ToolWidget
+                    key={tool.id}
+                    tool={tool}
+                    onClick={() => handleToolClick(tool.id, tool.isPremium || false)}
+                    delay={toolIdx * 50}
+                    showPremiumBadge={tool.isPremium}
+                    isLocked={tool.isPremium && !isPremium}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       </div>
+
+      {/* Login Modal */}
+      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
     </div>
   );
 }
