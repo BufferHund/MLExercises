@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type WidgetType = 'weather' | 'news' | 'todo' | 'quicklinks' | 'quote' | 'countdown';
+export type WidgetType = 'weather' | 'news' | 'todo' | 'quicklinks' | 'quote' | 'countdown' | 'football' | 'litebook' | 'games';
 
 export interface Widget {
   id: string;
@@ -9,6 +9,7 @@ export interface Widget {
   title: string;
   enabled: boolean;
   order: number;
+  isPremium?: boolean;  // 是否为会员专属
 }
 
 interface WidgetState {
@@ -26,6 +27,9 @@ const defaultWidgets: Widget[] = [
   { id: 'quicklinks', type: 'quicklinks', title: '快捷链接', enabled: false, order: 3 },
   { id: 'quote', type: 'quote', title: '每日一句', enabled: false, order: 4 },
   { id: 'countdown', type: 'countdown', title: '倒计时', enabled: false, order: 5 },
+  { id: 'football', type: 'football', title: 'Football Premium', enabled: false, order: 6, isPremium: true },
+  { id: 'litebook', type: 'litebook', title: 'LiteBook Premium', enabled: false, order: 7, isPremium: true },
+  { id: 'games', type: 'games', title: '桌游Games Premium', enabled: false, order: 8, isPremium: true },
 ];
 
 export const useWidgetStore = create<WidgetState>()(

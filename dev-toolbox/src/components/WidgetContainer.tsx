@@ -24,6 +24,9 @@ import TodoWidget from './widgets/TodoWidget';
 import QuickLinksWidget from './widgets/QuickLinksWidget';
 import QuoteWidget from './widgets/QuoteWidget';
 import CountdownWidget from './widgets/CountdownWidget';
+import FootballWidget from './widgets/FootballWidget';
+import LiteBookWidget from './widgets/LiteBookWidget';
+import GamesWidget from './widgets/GamesWidget';
 import type { WidgetType } from '../stores/useWidgetStore';
 
 function SortableWidget({ id, type }: { id: string; type: WidgetType }) {
@@ -57,6 +60,12 @@ function SortableWidget({ id, type }: { id: string; type: WidgetType }) {
         return <QuoteWidget />;
       case 'countdown':
         return <CountdownWidget />;
+      case 'football':
+        return <FootballWidget />;
+      case 'litebook':
+        return <LiteBookWidget />;
+      case 'games':
+        return <GamesWidget />;
       default:
         return null;
     }

@@ -1,5 +1,6 @@
-import { X, Eye, EyeOff } from 'lucide-react';
+import { X, Eye, EyeOff, Crown } from 'lucide-react';
 import { useWidgetStore } from '../stores/useWidgetStore';
+import { useUserStore } from '../stores/useUserStore';
 
 interface WidgetManagerProps {
   onClose: () => void;
@@ -7,6 +8,7 @@ interface WidgetManagerProps {
 
 export default function WidgetManager({ onClose }: WidgetManagerProps) {
   const { widgets, toggleWidget } = useWidgetStore();
+  const { isPremium } = useUserStore();
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -27,38 +29,60 @@ export default function WidgetManager({ onClose }: WidgetManagerProps) {
 
         {/* Widget List */}
         <div className="p-6 space-y-3 max-h-96 overflow-y-auto">
-          {widgets.map((widget) => (
-            <div
-              key={widget.id}
-              onClick={() => toggleWidget(widget.id)}
-              className="flex items-center justify-between p-4 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-xl cursor-pointer transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                {widget.enabled ? (
-                  <Eye className="w-5 h-5 text-blue-400" />
-                ) : (
-                  <EyeOff className="w-5 h-5 text-slate-500" />
-                )}
-                <div>
-                  <div className="text-sm font-medium text-white">{widget.title}</div>
-                  <div className="text-xs text-slate-400">
-                    {widget.enabled ? '已启用' : '已禁用'}
+          {widgets.map((widget) => {
+            const isLocked = widget.isPremium && !isPremium;
+            return (
+              <div
+                key={widget.id}
+                onClick={() => !isLocked && toggleWidget(widget.id)}
+                className={`flex items-center justify-between p-4 bg-slate-800/50 border rounded-xl transition-colors ${
+                  isLocked
+                    ? 'border-yellow-500/30 cursor-not-allowed opacity-70'
+                    : 'border-slate-700 hover:bg-slate-800 cursor-pointer'
+                } group`}
+              >
+                <div className="flex items-center gap-3">
+                  {widget.enabled ? (
+                    <Eye className="w-5 h-5 text-blue-400" />
+                  ) : (
+                    <EyeOff className="w-5 h-5 text-slate-500" />
+                  )}
+                  <div>
+                    <div className="text-sm font-medium text-white flex items-center gap-2">
+                      {widget.title}
+                      {widget.isPremium && (
+                        <Crown className="w-3.5 h-3.5 text-yellow-500" />
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-400">
+                      {isLocked
+                        ? '会员专属'
+                        : widget.enabled
+                        ? '已启用'
+                        : '已禁用'}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div
-                className={`w-12 h-6 rounded-full transition-colors ${
-                  widget.enabled ? 'bg-blue-600' : 'bg-slate-600'
-                }`}
-              >
                 <div
-                  className={`w-5 h-5 bg-white rounded-full transition-transform mt-0.5 ${
-                    widget.enabled ? 'translate-x-6' : 'translate-x-0.5'
+                  className={`w-12 h-6 rounded-full transition-colors ${
+                    isLocked
+                      ? 'bg-slate-700'
+                      : widget.enabled
+                      ? 'bg-blue-600'
+                      : 'bg-slate-600'
                   }`}
-                />
+                >
+                  <div
+                    className={`w-5 h-5 rounded-full transition-transform mt-0.5 ${
+                      isLocked
+                        ? 'bg-slate-500'
+                        : 'bg-white'
+                    } ${widget.enabled ? 'translate-x-6' : 'translate-x-0.5'}`}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Footer */}
