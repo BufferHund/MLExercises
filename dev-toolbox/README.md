@@ -49,7 +49,7 @@
 # 构建并运行
 docker-compose up -d
 
-# 访问 http://localhost:3000
+# 访问 http://localhost:3100
 ```
 
 **开发环境**
@@ -57,7 +57,7 @@ docker-compose up -d
 # 启动开发服务器（热重载）
 docker-compose --profile dev up dev-toolbox-dev
 
-# 访问 http://localhost:5173
+# 访问 http://localhost:3100
 ```
 
 **常用命令**
