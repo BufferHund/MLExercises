@@ -578,7 +578,6 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
           // 使用自定义PDF渲染组件
           return (
             <PdfReader
-              key={`pdf-${bookScale}`}
               file={file}
               theme={theme}
               zoom={pdfZoom}
@@ -590,7 +589,6 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       case 'epub':
         return (
           <EpubReader
-            key={`epub-${bookScale}`}
             file={file}
             fontSize={fontSize}
             theme={theme}
@@ -601,7 +599,6 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
       case 'md':
         return (
           <TextReader
-            key={`text-${bookScale}`}
             file={file}
             fontSize={fontSize}
             theme={theme}
@@ -704,10 +701,10 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
         ) : (
           /* 内容容器 - 居中显示，圆角，支持缩放 */
           <div
-            className={`${getLayoutWidth()} w-full mx-auto transition-transform duration-500 overflow-hidden rounded-2xl`}
+            className={`${getLayoutWidth()} w-full mx-auto transition-all duration-500 ease-out overflow-hidden rounded-2xl`}
             style={{
               transform: `scale(${bookScale})`,
-              transformOrigin: 'center top',
+              transformOrigin: 'center center',
             }}
           >
             {renderReader()}
@@ -797,38 +794,65 @@ export default function ImmersiveReader({ file, fileName, fileType, onClose }: I
                 <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${themeColors.hover}`}>
                   <button
                     onClick={() => setBookScale(1.0)}
-                    className={`px-2 py-1 text-xs font-medium transition-colors rounded ${bookScale === 1.0 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    className={`px-3 py-1 text-sm font-medium transition-colors rounded ${bookScale === 1.0 ? 'bg-black/20' : ''} ${themeColors.text}`}
                     title="默认"
                   >
                     100%
                   </button>
                   <button
+                    onClick={() => setBookScale(1.1)}
+                    className={`px-3 py-1 text-sm font-medium transition-colors rounded ${bookScale === 1.1 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="中等"
+                  >
+                    110%
+                  </button>
+                  <button
                     onClick={() => setBookScale(1.2)}
-                    className={`px-2 py-1 text-sm font-medium transition-colors rounded ${bookScale === 1.2 ? 'bg-black/20' : ''} ${themeColors.text}`}
-                    title="稍大"
+                    className={`px-3 py-1 text-sm font-medium transition-colors rounded ${bookScale === 1.2 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="较大"
                   >
                     120%
                   </button>
+                </div>
+              )}
+
+              {/* EPUB/TXT字体大小控制 */}
+              {(fileType === 'epub' || fileType === 'txt' || fileType === 'md') && (
+                <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${themeColors.hover}`}>
                   <button
-                    onClick={() => setBookScale(1.4)}
-                    className={`px-2 py-1 text-base font-medium transition-colors rounded ${bookScale === 1.4 ? 'bg-black/20' : ''} ${themeColors.text}`}
-                    title="较大"
+                    onClick={() => setFontSize(12)}
+                    className={`px-2 py-1 text-xs font-medium transition-colors rounded ${fontSize === 12 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="最小"
                   >
-                    140%
+                    12
                   </button>
                   <button
-                    onClick={() => setBookScale(1.6)}
-                    className={`px-2 py-1 text-lg font-medium transition-colors rounded ${bookScale === 1.6 ? 'bg-black/20' : ''} ${themeColors.text}`}
-                    title="很大"
+                    onClick={() => setFontSize(16)}
+                    className={`px-2 py-1 text-sm font-medium transition-colors rounded ${fontSize === 16 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="小"
                   >
-                    160%
+                    16
                   </button>
                   <button
-                    onClick={() => setBookScale(1.8)}
-                    className={`px-2 py-1 text-xl font-medium transition-colors rounded ${bookScale === 1.8 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    onClick={() => setFontSize(20)}
+                    className={`px-2 py-1 text-base font-medium transition-colors rounded ${fontSize === 20 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="中"
+                  >
+                    20
+                  </button>
+                  <button
+                    onClick={() => setFontSize(24)}
+                    className={`px-2 py-1 text-lg font-medium transition-colors rounded ${fontSize === 24 ? 'bg-black/20' : ''} ${themeColors.text}`}
+                    title="大"
+                  >
+                    24
+                  </button>
+                  <button
+                    onClick={() => setFontSize(28)}
+                    className={`px-2 py-1 text-xl font-medium transition-colors rounded ${fontSize === 28 ? 'bg-black/20' : ''} ${themeColors.text}`}
                     title="最大"
                   >
-                    180%
+                    28
                   </button>
                 </div>
               )}
