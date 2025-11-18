@@ -196,16 +196,16 @@ export default function AdminPage() {
         </Box>
 
       {/* 内容区域 */}
-      <Container maxWidth="lg" sx={{ py: 3 }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3 }, px: { xs: 2, sm: 3 } }}>
         {activeTab === 0 && (
-          <Stack spacing={3}>
+          <Stack spacing={{ xs: 2.5, sm: 3 }}>
             {/* 操作按钮 */}
             <Fade in timeout={ANIMATION_DURATION.slow}>
-              <Stack direction="row" spacing={2} flexWrap="wrap">
+              <Stack direction="row" spacing={{ xs: 1, sm: 2 }} flexWrap="wrap" gap={1}>
                 <EnhancedButton
                   startIcon={<AddIcon />}
                   onClick={() => setCreateDialogOpen(true)}
-                  sx={{ px: 3 }}
+                  sx={{ px: { xs: 2, sm: 3 }, fontSize: { xs: '0.875rem', sm: '0.9375rem' } }}
                 >
                   创建道具
                 </EnhancedButton>
@@ -214,7 +214,7 @@ export default function AdminPage() {
                   startIcon={<PrintIcon />}
                   onClick={handlePrintQR}
                   disabled={items.length === 0}
-                  sx={{ px: 3 }}
+                  sx={{ px: { xs: 2, sm: 3 }, fontSize: { xs: '0.875rem', sm: '0.9375rem' } }}
                 >
                   打印二维码
                 </EnhancedButton>
@@ -222,7 +222,7 @@ export default function AdminPage() {
                   variant="outlined"
                   startIcon={<RefreshIcon />}
                   onClick={loadData}
-                  sx={{ px: 3 }}
+                  sx={{ px: { xs: 2, sm: 3 }, fontSize: { xs: '0.875rem', sm: '0.9375rem' } }}
                 >
                   刷新
                 </EnhancedButton>
@@ -246,8 +246,9 @@ export default function AdminPage() {
                     xs: '1fr',
                     sm: 'repeat(2, 1fr)',
                     md: 'repeat(3, 1fr)',
+                    lg: 'repeat(4, 1fr)',
                   },
-                  gap: 3,
+                  gap: { xs: 2, sm: 2.5, md: 3 },
                 }}
               >
                 {items.map((item, idx) => (
@@ -262,38 +263,39 @@ export default function AdminPage() {
                       },
                     }}
                   >
-                      <CardContent sx={{ p: 3 }}>
+                      <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
                         <Box sx={{ textAlign: 'center' }}>
                           <Box
                             sx={{
-                              p: 2,
-                              borderRadius: 3,
+                              p: { xs: 1.5, sm: 2 },
+                              borderRadius: { xs: 2, sm: 3 },
                               bgcolor: 'white',
                               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
                               display: 'inline-block',
                               mb: 2,
+                              width: '100%',
                             }}
                           >
                             <img
                               src={item.qrCode}
                               alt={item.name}
-                              style={{ width: '100%', maxWidth: 180, display: 'block' }}
+                              style={{ width: '100%', maxWidth: 180, height: 'auto', display: 'block', margin: '0 auto' }}
                             />
                           </Box>
-                          <Typography variant="h6" fontWeight="bold" mt={2} gutterBottom>
+                          <Typography variant="h6" fontWeight="bold" mt={2} gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                             {item.name}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}>
                             {item.description}
                           </Typography>
-                          <Stack direction="row" spacing={1} justifyContent="center" mt={2} flexWrap="wrap">
-                            <Chip label={item.type} size="small" sx={{ fontWeight: 600 }} />
-                            <Chip label={`${item.durationSec}秒`} size="small" sx={{ fontWeight: 600 }} />
+                          <Stack direction="row" spacing={0.75} justifyContent="center" mt={2} flexWrap="wrap" gap={0.75}>
+                            <Chip label={item.type} size="small" sx={{ fontWeight: 600, fontSize: { xs: '0.7rem', sm: '0.75rem' } }} />
+                            <Chip label={`${item.durationSec}秒`} size="small" sx={{ fontWeight: 600, fontSize: { xs: '0.7rem', sm: '0.75rem' } }} />
                             <Chip
                               label={item.isUsed ? '已使用' : '未使用'}
                               size="small"
                               color={item.isUsed ? 'default' : 'success'}
-                              sx={{ fontWeight: 600 }}
+                              sx={{ fontWeight: 600, fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
                             />
                           </Stack>
                         </Box>
@@ -306,13 +308,13 @@ export default function AdminPage() {
         )}
 
         {activeTab === 1 && (
-          <Stack spacing={3}>
+          <Stack spacing={{ xs: 2.5, sm: 3 }}>
             <Fade in timeout={ANIMATION_DURATION.slow}>
               <EnhancedButton
                 variant="outlined"
                 startIcon={<RefreshIcon />}
                 onClick={loadData}
-                sx={{ alignSelf: 'flex-start', px: 3 }}
+                sx={{ alignSelf: 'flex-start', px: { xs: 2, sm: 3 }, fontSize: { xs: '0.875rem', sm: '0.9375rem' } }}
               >
                 刷新
               </EnhancedButton>
@@ -334,18 +336,18 @@ export default function AdminPage() {
                   animation="zoom"
                   timeout={getStaggeredDelay(idx, 1000, 150)}
                 >
-                    <CardContent sx={{ p: 3 }}>
+                    <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
                       <Box
                         sx={{
                           display: 'flex',
                           flexDirection: { xs: 'column', md: 'row' },
-                          gap: 3,
+                          gap: { xs: 2, sm: 3 },
                         }}
                       >
                         <Box sx={{ flex: { xs: '1', md: '0 0 35%' } }}>
                           <Box
                             sx={{
-                              borderRadius: 3,
+                              borderRadius: { xs: 2, sm: 3 },
                               overflow: 'hidden',
                               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
                             }}
@@ -358,45 +360,45 @@ export default function AdminPage() {
                           </Box>
                         </Box>
                         <Box sx={{ flex: 1 }}>
-                          <Stack spacing={3}>
+                          <Stack spacing={{ xs: 2, sm: 3 }}>
                             <Box>
-                              <Typography variant="h5" fontWeight="bold" gutterBottom>
+                              <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
                                 捕捉记录
                               </Typography>
-                              <Stack spacing={1} mt={2}>
+                              <Stack spacing={{ xs: 1.5, sm: 2 }} mt={2}>
                                 <Box>
-                                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                  <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                                     猎人 → 逃亡者
                                   </Typography>
-                                  <Typography variant="body1" fontWeight={600}>
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: { xs: '0.9375rem', sm: '1rem' } }}>
                                     {capture.hunter?.nickname || '未知'} → {capture.runner?.nickname || '未知'}
                                   </Typography>
                                 </Box>
                                 <Box>
-                                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                  <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                                     位置坐标
                                   </Typography>
-                                  <Typography variant="body2" fontFamily="monospace">
+                                  <Typography variant="body2" fontFamily="monospace" sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}>
                                     {capture.lat.toFixed(6)}, {capture.lng.toFixed(6)}
                                   </Typography>
                                 </Box>
                                 <Box>
-                                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                                  <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                                     提交时间
                                   </Typography>
-                                  <Typography variant="body2">
+                                  <Typography variant="body2" sx={{ fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}>
                                     {new Date(capture.createdAt).toLocaleString('zh-CN')}
                                   </Typography>
                                 </Box>
                               </Stack>
                             </Box>
-                            <Stack direction="row" spacing={2}>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                               <EnhancedButton
                                 variant="success"
                                 startIcon={<CheckIcon />}
                                 onClick={() => handleVerifyCapture(capture.id, true)}
                                 disabled={loading}
-                                sx={{ px: 4, flex: 1 }}
+                                sx={{ px: { xs: 3, sm: 4 }, py: { xs: 1.5, sm: 1 }, flex: 1, fontSize: { xs: '0.9375rem', sm: '0.9375rem' } }}
                               >
                                 通过
                               </EnhancedButton>
@@ -405,7 +407,7 @@ export default function AdminPage() {
                                 startIcon={<CloseIcon />}
                                 onClick={() => handleVerifyCapture(capture.id, false)}
                                 disabled={loading}
-                                sx={{ px: 4, flex: 1 }}
+                                sx={{ px: { xs: 3, sm: 4 }, py: { xs: 1.5, sm: 1 }, flex: 1, fontSize: { xs: '0.9375rem', sm: '0.9375rem' } }}
                               >
                                 拒绝
                               </EnhancedButton>
