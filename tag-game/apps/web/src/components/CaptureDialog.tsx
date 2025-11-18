@@ -1,4 +1,22 @@
 import { useState } from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  ListItemIcon,
+  Typography,
+  Box,
+  IconButton,
+} from '@mui/material';
+import {
+  Close as CloseIcon,
+  CameraAlt as CameraIcon,
+  Person as PersonIcon,
+} from '@mui/icons-material';
 import type { Position } from '../types';
 import CameraCapture from './CameraCapture';
 
@@ -37,58 +55,96 @@ export default function CaptureDialog({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-hidden">
-        <div className="bg-red-600 text-white p-4">
-          <h2 className="text-xl font-bold">选择抓捕目标</h2>
-          <p className="text-sm opacity-90 mt-1">
+    <Dialog
+      open={true}
+      onClose={onCancel}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+        },
+      }}
+    >
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+        <Box>
+          <Typography variant="h6" fontWeight="bold">
+            选择抓捕目标
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             选择附近的逃亡者并拍摄他们的徽章
-          </p>
-        </div>
+          </Typography>
+        </Box>
+        <IconButton onClick={onCancel} edge="end">
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
 
-        <div className="p-4 overflow-y-auto max-h-96">
-          {nearbyRunners.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p>附近没有逃亡者</p>
-              <p className="text-sm mt-2">靠近逃亡者后再尝试抓捕</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {nearbyRunners.map((runner, idx) => (
-                <button
-                  key={idx}
+      <DialogContent sx={{ p: 0 }}>
+        {nearbyRunners.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 8, px: 3 }}>
+            <PersonIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+            <Typography color="text.secondary" gutterBottom>
+              附近没有逃亡者
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              靠近逃亡者后再尝试抓捕
+            </Typography>
+          </Box>
+        ) : (
+          <List sx={{ py: 1 }}>
+            {nearbyRunners.map((runner, idx) => (
+              <ListItem key={idx} disablePadding>
+                <ListItemButton
                   onClick={() => handleSelectRunner(runner.userId)}
-                  className="w-full bg-gray-100 hover:bg-gray-200 p-4 rounded-lg text-left transition-colors"
+                  sx={{
+                    py: 2,
+                    px: 3,
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
+                  }}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-gray-800">
+                  <ListItemIcon>
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: '50%',
+                        bgcolor: 'primary.main',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                      }}
+                    >
+                      <PersonIcon />
+                    </Box>
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Typography variant="subtitle1" fontWeight="medium">
                         逃亡者 #{idx + 1}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        距离: ~{Math.round(runner.lastSeenSec * 10)}米
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        最后更新: {runner.lastSeenSec}秒前
-                      </p>
-                    </div>
-                    <div className="text-3xl">📸</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="p-4 border-t">
-          <button
-            onClick={onCancel}
-            className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-lg"
-          >
-            取消
-          </button>
-        </div>
-      </div>
-    </div>
+                      </Typography>
+                    }
+                    secondary={
+                      <>
+                        <Typography variant="body2" color="text.secondary">
+                          距离: ~{Math.round(runner.lastSeenSec * 10)}米
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          最后更新: {runner.lastSeenSec}秒前
+                        </Typography>
+                      </>
+                    }
+                  />
+                  <CameraIcon sx={{ color: 'primary.main', fontSize: 32 }} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
