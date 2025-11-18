@@ -173,16 +173,16 @@ export default function PlayPage() {
               : '0 4px 20px rgba(25, 118, 210, 0.3)',
           }}
         >
-          <Toolbar variant="dense" sx={{ py: 1 }}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h6" noWrap fontWeight="bold">
+          <Toolbar variant="dense" sx={{ py: { xs: 0.75, sm: 1 }, px: { xs: 2, sm: 3 } }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="h6" noWrap fontWeight="bold" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                 {game?.name}
               </Typography>
-              <Typography variant="caption" sx={{ opacity: 0.95 }}>
+              <Typography variant="caption" sx={{ opacity: 0.95, fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                 {isHunter ? '🎯 猎人' : '🏃 逃亡者'}
               </Typography>
             </Box>
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center">
               <Chip
                 label={`附近: ${nearby.length}`}
                 size="small"
@@ -191,6 +191,8 @@ export default function PlayPage() {
                   backdropFilter: 'blur(10px)',
                   color: 'white',
                   fontWeight: 600,
+                  fontSize: { xs: '0.7rem', sm: '0.8125rem' },
+                  height: { xs: 24, sm: 28 },
                 }}
               />
               <Chip
@@ -201,6 +203,8 @@ export default function PlayPage() {
                   backdropFilter: 'blur(10px)',
                   color: 'white',
                   fontWeight: 600,
+                  fontSize: { xs: '0.7rem', sm: '0.8125rem' },
+                  height: { xs: 24, sm: 28 },
                 }}
               />
             </Stack>
@@ -264,11 +268,11 @@ export default function PlayPage() {
         <Box
           sx={{
             position: 'absolute',
-            bottom: 16,
-            right: 16,
+            bottom: { xs: 12, sm: 16 },
+            right: { xs: 12, sm: 16 },
             display: 'flex',
             flexDirection: 'column',
-            gap: 2,
+            gap: { xs: 1.5, sm: 2 },
           }}
         >
           <Zoom in timeout={800}>
@@ -277,6 +281,8 @@ export default function PlayPage() {
               onClick={handleScan}
               size="medium"
               sx={{
+                width: { xs: 48, sm: 56 },
+                height: { xs: 48, sm: 56 },
                 boxShadow: '0 6px 20px rgba(156, 39, 176, 0.4)',
                 '&:hover': {
                   transform: 'scale(1.1)',
@@ -284,7 +290,7 @@ export default function PlayPage() {
                 },
               }}
             >
-              <ScanIcon />
+              <ScanIcon sx={{ fontSize: { xs: 22, sm: 24 } }} />
             </Fab>
           </Zoom>
 
@@ -295,6 +301,8 @@ export default function PlayPage() {
                 onClick={() => setBackpackOpen(true)}
                 size="medium"
                 sx={{
+                  width: { xs: 48, sm: 56 },
+                  height: { xs: 48, sm: 56 },
                   background: gradients.primary,
                   boxShadow: '0 6px 20px rgba(103, 80, 164, 0.4)',
                   '&:hover': {
@@ -304,7 +312,7 @@ export default function PlayPage() {
                   },
                 }}
               >
-                <BackpackIcon />
+                <BackpackIcon sx={{ fontSize: { xs: 22, sm: 24 } }} />
               </Fab>
             </Badge>
           </Zoom>
@@ -317,8 +325,8 @@ export default function PlayPage() {
                 disabled={!insideBounds}
                 size="large"
                 sx={{
-                  width: 72,
-                  height: 72,
+                  width: { xs: 60, sm: 72 },
+                  height: { xs: 60, sm: 72 },
                   background: gradients.hunter,
                   boxShadow: '0 8px 28px rgba(211, 47, 47, 0.5)',
                   animation: 'pulse 2s ease-in-out infinite',
@@ -332,7 +340,7 @@ export default function PlayPage() {
                   },
                 }}
               >
-                <CameraIcon sx={{ fontSize: 36 }} />
+                <CameraIcon sx={{ fontSize: { xs: 30, sm: 36 } }} />
               </Fab>
             </Zoom>
           )}
@@ -364,31 +372,33 @@ export default function PlayPage() {
           },
         }}
       >
-        <Box sx={{ p: 3 }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-            <Typography variant="h5" fontWeight="bold">
+        <Box sx={{ p: { xs: 2.5, sm: 3 } }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" mb={{ xs: 2, sm: 3 }}>
+            <Typography variant="h5" fontWeight="bold" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
               背包 ({backpack.length})
             </Typography>
             <IconButton
               onClick={() => setBackpackOpen(false)}
               sx={{
                 bgcolor: 'rgba(0, 0, 0, 0.04)',
+                width: { xs: 36, sm: 40 },
+                height: { xs: 36, sm: 40 },
                 '&:hover': {
                   bgcolor: 'rgba(0, 0, 0, 0.08)',
                 },
               }}
             >
-              <CloseIcon />
+              <CloseIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
             </IconButton>
           </Stack>
 
           {backpack.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 6 }}>
-              <BackpackIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2, opacity: 0.5 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
+            <Box sx={{ textAlign: 'center', py: { xs: 4, sm: 6 } }}>
+              <BackpackIcon sx={{ fontSize: { xs: 48, sm: 64 }, color: 'text.disabled', mb: 2, opacity: 0.5 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                 背包空空如也
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
                 扫描道具二维码来获取道具
               </Typography>
             </Box>
@@ -421,6 +431,9 @@ export default function PlayPage() {
                           sx={{
                             borderRadius: 2,
                             fontWeight: 'bold',
+                            fontSize: { xs: '0.875rem', sm: '0.875rem' },
+                            px: { xs: 2, sm: 3 },
+                            py: { xs: 0.75, sm: 1 },
                             background: gradients.primary,
                             boxShadow: '0 4px 12px rgba(103, 80, 164, 0.3)',
                             '&:hover': {
