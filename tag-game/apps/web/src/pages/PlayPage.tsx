@@ -348,8 +348,19 @@ export default function PlayPage() {
           sx: {
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
-            background: 'linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(247, 247, 255, 1) 100%)',
-            boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.15)',
+            background: 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '100%',
+              background: 'linear-gradient(135deg, rgba(103, 80, 164, 0.05) 0%, rgba(138, 35, 135, 0.05) 100%)',
+              pointerEvents: 'none',
+            },
           },
         }}
       >
@@ -390,13 +401,15 @@ export default function PlayPage() {
                       mb: 1.5,
                       p: 2.5,
                       borderRadius: 3,
-                      bgcolor: 'rgba(0, 0, 0, 0.02)',
-                      border: '1px solid rgba(0, 0, 0, 0.05)',
-                      transition: 'all 0.2s',
+                      background: 'rgba(255, 255, 255, 0.5)',
+                      backdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(103, 80, 164, 0.15)',
+                      transition: 'all 0.3s cubic-bezier(0.23, 1, 0.32, 1)',
                       '&:hover': {
-                        bgcolor: 'rgba(103, 80, 164, 0.05)',
-                        transform: 'translateX(4px)',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                        background: 'rgba(255, 255, 255, 0.7)',
+                        border: '1px solid rgba(103, 80, 164, 0.3)',
+                        transform: 'translateX(4px) translateY(-2px)',
+                        boxShadow: '0 8px 24px rgba(103, 80, 164, 0.15)',
                       },
                     }}
                     secondaryAction={
