@@ -36,6 +36,7 @@ import AnimatedCard from '../components/AnimatedCard';
 import EnhancedButton from '../components/EnhancedButton';
 import EnhancedAppBar from '../components/EnhancedAppBar';
 import EmptyState from '../components/EmptyState';
+import LiquidBackground from '../components/LiquidBackground';
 import type { Game, Item, Capture } from '../types';
 
 export default function AdminPage() {
@@ -140,8 +141,8 @@ export default function AdminPage() {
   if (!user?.isAdmin) return null;
 
   return (
-    <Fade in timeout={ANIMATION_DURATION.normal}>
-      <Box sx={{ minHeight: '100vh', background: backgroundGradients.warning }}>
+    <LiquidBackground variant="secondary">
+      <Box sx={{ minHeight: '100vh' }}>
         {/* 顶部导航栏 */}
         <EnhancedAppBar
           variant="admin"
@@ -447,6 +448,6 @@ export default function AdminPage() {
         </Alert>
       </Snackbar>
     </Box>
-    </Fade>
+    </LiquidBackground>
   );
 }
