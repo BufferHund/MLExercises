@@ -18,6 +18,9 @@ import {
   Badge,
   AppBar,
   Toolbar,
+  Fade,
+  Slide,
+  Zoom,
 } from '@mui/material';
 import {
   CameraAlt as CameraIcon,
@@ -30,7 +33,7 @@ import { useGeolocation, isInsideBounds } from '../hooks/useGeolocation';
 import { useGameStore } from '../store/gameStore';
 import { games, items, captures } from '../api/client';
 import CaptureDialog from '../components/CaptureDialog';
-import { hunterColor, runnerColor } from '../theme';
+import { hunterColor, runnerColor, gradients } from '../theme';
 import type { Game, AreaBounds, Pickup } from '../types';
 
 // 修复 Leaflet 图标
@@ -159,35 +162,51 @@ export default function PlayPage() {
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* 顶部状态栏 */}
-      <AppBar
-        position="static"
-        sx={{
-          bgcolor: isHunter ? hunterColor : runnerColor,
-        }}
-      >
-        <Toolbar variant="dense">
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h6" noWrap>
-              {game?.name}
-            </Typography>
-            <Typography variant="caption">
-              {isHunter ? '🎯 猎人' : '🏃 逃亡者'}
-            </Typography>
-          </Box>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Chip
-              label={`附近: ${nearby.length}`}
-              size="small"
-              sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }}
-            />
-            <Chip
-              label={insideBounds ? '✅ 区域内' : '⚠️ 区域外'}
-              size="small"
-              sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }}
-            />
-          </Stack>
-        </Toolbar>
-      </AppBar>
+      <Slide in direction="down" timeout={600}>
+        <AppBar
+          position="static"
+          elevation={4}
+          sx={{
+            background: isHunter ? gradients.hunter : gradients.runner,
+            boxShadow: isHunter
+              ? '0 4px 20px rgba(211, 47, 47, 0.3)'
+              : '0 4px 20px rgba(25, 118, 210, 0.3)',
+          }}
+        >
+          <Toolbar variant="dense" sx={{ py: 1 }}>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" noWrap fontWeight="bold">
+                {game?.name}
+              </Typography>
+              <Typography variant="caption" sx={{ opacity: 0.95 }}>
+                {isHunter ? '🎯 猎人' : '🏃 逃亡者'}
+              </Typography>
+            </Box>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip
+                label={`附近: ${nearby.length}`}
+                size="small"
+                sx={{
+                  bgcolor: 'rgba(255,255,255,0.25)',
+                  backdropFilter: 'blur(10px)',
+                  color: 'white',
+                  fontWeight: 600,
+                }}
+              />
+              <Chip
+                label={insideBounds ? '✅ 区域内' : '⚠️ 区域外'}
+                size="small"
+                sx={{
+                  bgcolor: 'rgba(255,255,255,0.25)',
+                  backdropFilter: 'blur(10px)',
+                  color: 'white',
+                  fontWeight: 600,
+                }}
+              />
+            </Stack>
+          </Toolbar>
+        </AppBar>
+      </Slide>
 
       {/* 地图 */}
       <Box sx={{ flex: 1, position: 'relative' }}>
@@ -249,37 +268,73 @@ export default function PlayPage() {
             right: 16,
             display: 'flex',
             flexDirection: 'column',
-            gap: 1,
+            gap: 2,
           }}
         >
-          <Fab
-            color="secondary"
-            onClick={handleScan}
-            size="medium"
-          >
-            <ScanIcon />
-          </Fab>
-
-          <Badge badgeContent={backpack.length} color="error">
+          <Zoom in timeout={800}>
             <Fab
-              color="primary"
-              onClick={() => setBackpackOpen(true)}
+              color="secondary"
+              onClick={handleScan}
               size="medium"
+              sx={{
+                boxShadow: '0 6px 20px rgba(156, 39, 176, 0.4)',
+                '&:hover': {
+                  transform: 'scale(1.1)',
+                  boxShadow: '0 8px 28px rgba(156, 39, 176, 0.5)',
+                },
+              }}
             >
-              <BackpackIcon />
+              <ScanIcon />
             </Fab>
-          </Badge>
+          </Zoom>
+
+          <Zoom in timeout={1000}>
+            <Badge badgeContent={backpack.length} color="error">
+              <Fab
+                color="primary"
+                onClick={() => setBackpackOpen(true)}
+                size="medium"
+                sx={{
+                  background: gradients.primary,
+                  boxShadow: '0 6px 20px rgba(103, 80, 164, 0.4)',
+                  '&:hover': {
+                    background: gradients.primary,
+                    transform: 'scale(1.1)',
+                    boxShadow: '0 8px 28px rgba(103, 80, 164, 0.5)',
+                  },
+                }}
+              >
+                <BackpackIcon />
+              </Fab>
+            </Badge>
+          </Zoom>
 
           {isHunter && !user?.isEliminated && (
-            <Fab
-              color="error"
-              onClick={handleCaptureClick}
-              disabled={!insideBounds}
-              size="large"
-              sx={{ width: 64, height: 64 }}
-            >
-              <CameraIcon sx={{ fontSize: 32 }} />
-            </Fab>
+            <Zoom in timeout={1200}>
+              <Fab
+                color="error"
+                onClick={handleCaptureClick}
+                disabled={!insideBounds}
+                size="large"
+                sx={{
+                  width: 72,
+                  height: 72,
+                  background: gradients.hunter,
+                  boxShadow: '0 8px 28px rgba(211, 47, 47, 0.5)',
+                  animation: 'pulse 2s ease-in-out infinite',
+                  '&:hover': {
+                    background: gradients.hunter,
+                    transform: 'scale(1.15)',
+                    boxShadow: '0 12px 36px rgba(211, 47, 47, 0.6)',
+                  },
+                  '&:disabled': {
+                    opacity: 0.5,
+                  },
+                }}
+              >
+                <CameraIcon sx={{ fontSize: 36 }} />
+              </Fab>
+            </Zoom>
           )}
         </Box>
       </Box>
@@ -289,47 +344,105 @@ export default function PlayPage() {
         anchor="bottom"
         open={backpackOpen}
         onClose={() => setBackpackOpen(false)}
+        PaperProps={{
+          sx: {
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            background: 'linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(247, 247, 255, 1) 100%)',
+            boxShadow: '0 -8px 32px rgba(0, 0, 0, 0.15)',
+          },
+        }}
       >
-        <Box sx={{ p: 2 }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
-            <Typography variant="h6">背包 ({backpack.length})</Typography>
-            <IconButton onClick={() => setBackpackOpen(false)}>
+        <Box sx={{ p: 3 }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+            <Typography variant="h5" fontWeight="bold">
+              背包 ({backpack.length})
+            </Typography>
+            <IconButton
+              onClick={() => setBackpackOpen(false)}
+              sx={{
+                bgcolor: 'rgba(0, 0, 0, 0.04)',
+                '&:hover': {
+                  bgcolor: 'rgba(0, 0, 0, 0.08)',
+                },
+              }}
+            >
               <CloseIcon />
             </IconButton>
           </Stack>
 
           {backpack.length === 0 ? (
-            <Typography color="text.secondary" textAlign="center" py={4}>
-              背包空空如也
-            </Typography>
+            <Box sx={{ textAlign: 'center', py: 6 }}>
+              <BackpackIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2, opacity: 0.5 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                背包空空如也
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                扫描道具二维码来获取道具
+              </Typography>
+            </Box>
           ) : (
-            <List>
-              {backpack.map((pickup) => (
-                <ListItem
-                  key={pickup.id}
-                  secondaryAction={
-                    !pickup.used && (
-                      <Button
-                        variant="contained"
-                        size="small"
-                        onClick={() => handleUseItem(pickup.id)}
-                      >
-                        使用
-                      </Button>
-                    )
-                  }
-                >
-                  <ListItemText
-                    primary={pickup.item.name || pickup.item.type}
-                    secondary={
-                      <>
-                        {pickup.item.description}
-                        <br />
-                        {pickup.used ? '已使用' : '未使用'}
-                      </>
+            <List sx={{ p: 0 }}>
+              {backpack.map((pickup, idx) => (
+                <Fade in timeout={300 + idx * 100} key={pickup.id}>
+                  <ListItem
+                    sx={{
+                      mb: 1.5,
+                      p: 2.5,
+                      borderRadius: 3,
+                      bgcolor: 'rgba(0, 0, 0, 0.02)',
+                      border: '1px solid rgba(0, 0, 0, 0.05)',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        bgcolor: 'rgba(103, 80, 164, 0.05)',
+                        transform: 'translateX(4px)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                      },
+                    }}
+                    secondaryAction={
+                      !pickup.used && (
+                        <Button
+                          variant="contained"
+                          size="medium"
+                          onClick={() => handleUseItem(pickup.id)}
+                          sx={{
+                            borderRadius: 2,
+                            fontWeight: 'bold',
+                            background: gradients.primary,
+                            boxShadow: '0 4px 12px rgba(103, 80, 164, 0.3)',
+                            '&:hover': {
+                              background: gradients.primary,
+                              boxShadow: '0 6px 16px rgba(103, 80, 164, 0.4)',
+                            },
+                          }}
+                        >
+                          使用
+                        </Button>
+                      )
                     }
-                  />
-                </ListItem>
+                  >
+                    <ListItemText
+                      primary={
+                        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                          {pickup.item.name || pickup.item.type}
+                        </Typography>
+                      }
+                      secondary={
+                        <Box sx={{ mt: 0.5 }}>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            {pickup.item.description}
+                          </Typography>
+                          <Chip
+                            label={pickup.used ? '已使用' : '未使用'}
+                            size="small"
+                            color={pickup.used ? 'default' : 'success'}
+                            sx={{ mt: 1, fontWeight: 600 }}
+                          />
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                </Fade>
               ))}
             </List>
           )}
