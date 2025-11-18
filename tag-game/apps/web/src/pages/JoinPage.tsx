@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import {
   Box,
   Container,
-  Card,
   CardContent,
   TextField,
   Button,
@@ -17,8 +16,6 @@ import {
   Paper,
   Switch,
   FormControlLabel,
-  Fade,
-  Zoom,
 } from '@mui/material';
 import {
   SportsEsports as GameIcon,
@@ -27,7 +24,9 @@ import {
 } from '@mui/icons-material';
 import { auth, games } from '../api/client';
 import { useGameStore } from '../store/gameStore';
-import { gradients } from '../theme';
+import { liquidGlassInput, liquidGlassButton } from '../styles/liquidGlass';
+import LiquidBackground from '../components/LiquidBackground';
+import LiquidGlassCard from '../components/LiquidGlassCard';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function JoinPage() {
@@ -92,58 +91,23 @@ export default function JoinPage() {
   };
 
   return (
-    <Fade in timeout={600}>
+    <LiquidBackground variant="primary">
       <Box
         sx={{
-          minHeight: '100vh',
-          background: gradients.primary,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          minHeight: '100vh',
           p: 2,
-          position: 'relative',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: -100,
-            right: -100,
-            width: 400,
-            height: 400,
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.1)',
-            animation: 'pulse 4s ease-in-out infinite',
-          },
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            bottom: -150,
-            left: -150,
-            width: 500,
-            height: 500,
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.05)',
-            animation: 'pulse 6s ease-in-out infinite',
-          },
         }}
       >
-        <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
-          <Zoom in timeout={800}>
-            <Card
-              elevation={24}
-              sx={{
-                borderRadius: 6,
-                overflow: 'visible',
-                backdropFilter: 'blur(20px)',
-                background: 'rgba(255, 255, 255, 0.95)',
-                position: 'relative',
-              }}
-            >
-              {/* 语言切换器 */}
-              <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
-                <LanguageSwitcher />
-              </Box>
-              <CardContent sx={{ p: 5 }}>
+        <Container maxWidth="sm">
+          <LiquidGlassCard variant="floating" timeout={1000}>
+            {/* 语言切换器 */}
+            <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
+              <LanguageSwitcher />
+            </Box>
+            <CardContent sx={{ p: 5 }}>
                 {/* 标题 */}
                 <Stack spacing={2} alignItems="center" mb={4}>
                   <Box
@@ -198,6 +162,7 @@ export default function JoinPage() {
                     inputProps={{ maxLength: 20 }}
                     disabled={loading}
                     variant="outlined"
+                    sx={liquidGlassInput}
                   />
 
                   {/* 管理员开关 */}
@@ -205,13 +170,16 @@ export default function JoinPage() {
                     elevation={0}
                     sx={{
                       p: 2.5,
-                      bgcolor: 'rgba(103, 80, 164, 0.04)',
+                      background: 'rgba(255, 255, 255, 0.6)',
+                      backdropFilter: 'blur(15px)',
                       borderRadius: 3,
-                      border: '1px solid rgba(103, 80, 164, 0.1)',
-                      transition: 'all 0.3s',
+                      border: '1px solid rgba(103, 80, 164, 0.2)',
+                      transition: 'all 0.3s cubic-bezier(0.23, 1, 0.32, 1)',
                       '&:hover': {
-                        bgcolor: 'rgba(103, 80, 164, 0.08)',
-                        borderColor: 'rgba(103, 80, 164, 0.2)',
+                        background: 'rgba(255, 255, 255, 0.7)',
+                        border: '1px solid rgba(103, 80, 164, 0.3)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 16px rgba(103, 80, 164, 0.1)',
                       },
                     }}
                   >
@@ -278,6 +246,7 @@ export default function JoinPage() {
                       fullWidth
                       disabled={loading}
                       helperText={t('join.gameIdHelper')}
+                      sx={liquidGlassInput}
                     />
                   ) : (
                     <TextField
@@ -288,6 +257,7 @@ export default function JoinPage() {
                       fullWidth
                       inputProps={{ maxLength: 50 }}
                       disabled={loading}
+                      sx={liquidGlassInput}
                     />
                   )}
 
@@ -311,23 +281,16 @@ export default function JoinPage() {
                     fullWidth
                     startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
                     sx={{
+                      ...liquidGlassButton.solid,
                       py: 2,
                       fontSize: '1.1rem',
-                      fontWeight: 'bold',
-                      background: gradients.primary,
-                      boxShadow: '0 8px 24px rgba(103, 80, 164, 0.4)',
-                      '&:hover': {
-                        background: gradients.primary,
-                        boxShadow: '0 12px 32px rgba(103, 80, 164, 0.5)',
-                      },
                     }}
                   >
                     {loading ? t('join.processing') : createMode ? t('join.btnCreate') : t('join.btnJoin')}
                   </Button>
                 </Stack>
               </CardContent>
-            </Card>
-          </Zoom>
+          </LiquidGlassCard>
 
           {/* 底部说明 */}
           <Typography
@@ -338,13 +301,17 @@ export default function JoinPage() {
             mt={3}
             sx={{
               textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-              animation: 'fadeIn 1.2s ease-out',
+              backdropFilter: 'blur(10px)',
+              background: 'rgba(255, 255, 255, 0.1)',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
             }}
           >
             {t('app.poweredBy')}
           </Typography>
         </Container>
       </Box>
-    </Fade>
+    </LiquidBackground>
   );
 }
