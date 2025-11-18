@@ -130,27 +130,32 @@ export default function LobbyPage() {
           alignItems: 'flex-start',
           justifyContent: 'center',
           minHeight: '100vh',
-          py: 3
+          py: { xs: 2, sm: 3 },
+          px: { xs: 2, sm: 0 },
         }}
       >
         <Container maxWidth="md">
-          <Stack spacing={3}>
+          <Stack spacing={{ xs: 2.5, sm: 3 }}>
           {/* 游戏信息卡片 */}
           <AnimatedCard animation="grow" timeout={ANIMATION_DURATION.normal}>
-            <CardContent sx={{ p: 4 }}>
-              <Stack spacing={3}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Typography variant="h4" fontWeight="bold">
+            <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+              <Stack spacing={{ xs: 2, sm: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+                  <Typography variant="h4" fontWeight="bold" sx={{ fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' } }}>
                     {game?.name}
                   </Typography>
                   <Chip
                     label={game?.status === 'LOBBY' ? '等待中' : '进行中'}
                     color={game?.status === 'LOBBY' ? 'default' : 'success'}
-                    sx={chipStyles.elevated}
+                    sx={{
+                      ...chipStyles.elevated,
+                      px: { xs: 1.5, sm: 2 },
+                      height: { xs: 28, sm: 32 },
+                    }}
                   />
                 </Box>
                 <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom fontWeight={500}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom fontWeight={500} sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                     游戏代码
                   </Typography>
                   <Typography
@@ -158,10 +163,12 @@ export default function LobbyPage() {
                     fontFamily="monospace"
                     fontWeight="bold"
                     sx={{
+                      fontSize: { xs: '1.25rem', sm: '1.5rem' },
                       background: gradients.primary,
                       backgroundClip: 'text',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
+                      letterSpacing: { xs: 1, sm: 2 },
                     }}
                   >
                     {gameId}
@@ -174,28 +181,28 @@ export default function LobbyPage() {
           {/* 玩家徽章二维码 */}
           {badge && (
             <AnimatedCard variant="gradient" animation="grow" timeout={ANIMATION_DURATION.slow}>
-                <CardContent sx={{ p: 4 }}>
-                  <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                    <QrCodeIcon sx={{ mr: 1, color: 'primary.main' }} />
+                <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+                  <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                    <QrCodeIcon sx={{ mr: 1, color: 'primary.main', fontSize: { xs: 24, sm: 28 } }} />
                     你的玩家徽章
                   </Typography>
-                  <Stack alignItems="center" spacing={3} mt={3}>
+                  <Stack alignItems="center" spacing={{ xs: 2, sm: 3 }} mt={{ xs: 2, sm: 3 }}>
                     <Paper
                       elevation={8}
                       sx={{
-                        p: 3,
+                        p: { xs: 2, sm: 3 },
                         bgcolor: 'white',
-                        borderRadius: 4,
+                        borderRadius: { xs: 3, sm: 4 },
                         boxShadow: '0 8px 32px rgba(103, 80, 164, 0.2)',
                       }}
                     >
                       <img
                         src={badge.qrDataUrl}
                         alt="Player Badge QR"
-                        style={{ width: 200, height: 200, display: 'block' }}
+                        style={{ width: '100%', maxWidth: 200, height: 'auto', aspectRatio: '1', display: 'block' }}
                       />
                     </Paper>
-                    <Typography variant="body1" color="text.secondary" fontWeight={500}>
+                    <Typography variant="body1" color="text.secondary" fontWeight={500} sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, textAlign: 'center' }}>
                       佩戴此二维码参与游戏
                     </Typography>
                     <Chip
@@ -203,8 +210,8 @@ export default function LobbyPage() {
                       sx={{
                         fontFamily: 'monospace',
                         fontWeight: 600,
-                        fontSize: '0.875rem',
-                        px: 2,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                        px: { xs: 1.5, sm: 2 },
                       }}
                     />
                   </Stack>
@@ -217,7 +224,7 @@ export default function LobbyPage() {
             <LiquidGlassCard variant="morphing" timeout={1000}>
               <CardContent
                 sx={{
-                  p: 4,
+                  p: { xs: 3, sm: 4 },
                   background: isHunter ? gradients.hunter : gradients.runner,
                   borderRadius: '24px',
                   color: 'white',
@@ -226,10 +233,10 @@ export default function LobbyPage() {
                   '&::before': {
                     content: '""',
                     position: 'absolute',
-                    top: -50,
-                    right: -50,
-                    width: 200,
-                    height: 200,
+                    top: { xs: -30, sm: -50 },
+                    right: { xs: -30, sm: -50 },
+                    width: { xs: 150, sm: 200 },
+                    height: { xs: 150, sm: 200 },
                     borderRadius: '50%',
                     background: 'rgba(255, 255, 255, 0.15)',
                     animation: 'liquidFloat 6s ease-in-out infinite',
@@ -237,10 +244,10 @@ export default function LobbyPage() {
                 }}
               >
                 <Box sx={{ position: 'relative', zIndex: 1 }}>
-                  <Typography variant="h4" fontWeight="bold" gutterBottom>
+                  <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.75rem', sm: '2rem', md: '2.125rem' } }}>
                     {isHunter ? '🎯 你是猎人' : '🏃 你是逃亡者'}
                   </Typography>
-                  <Typography variant="h6" sx={{ opacity: 0.95 }}>
+                  <Typography variant="h6" sx={{ opacity: 0.95, fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' } }}>
                     {isHunter
                       ? '目标：抓捕所有逃亡者'
                       : '目标：躲避猎人，坚持到最后'}
@@ -252,11 +259,11 @@ export default function LobbyPage() {
 
           {/* 玩家列表 */}
           <AnimatedCard animation="grow" timeout={ANIMATION_DURATION.slowest}>
-              <CardContent sx={{ p: 4 }}>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
+              <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+                <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                   玩家列表 ({game?.participations?.length || 0})
                 </Typography>
-                <Divider sx={{ my: 3 }} />
+                <Divider sx={{ my: { xs: 2, sm: 3 } }} />
                 <List sx={{ p: 0 }}>
                   {game?.participations?.map((p, index) => (
                     <Fade in timeout={getStaggeredDelay(index, 1400, 100)} key={p.id}>
@@ -298,16 +305,16 @@ export default function LobbyPage() {
           {/* 主持人操作 */}
           {game?.status === 'LOBBY' && (
             <AnimatedCard animation="grow" timeout={1400}>
-                <CardContent sx={{ p: 4 }}>
-                  <Typography variant="h6" fontWeight="bold" gutterBottom>
+                <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+                  <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                     主持人操作
                   </Typography>
-                  <Stack spacing={2} mt={3}>
+                  <Stack spacing={{ xs: 1.5, sm: 2 }} mt={{ xs: 2, sm: 3 }}>
                     <EnhancedButton
                       fullWidth
                       startIcon={<ShuffleIcon />}
                       onClick={handleAssignTeams}
-                      sx={{ py: 2, fontSize: '1rem' }}
+                      sx={{ py: { xs: 1.5, sm: 2 }, fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}
                     >
                       分配阵营
                     </EnhancedButton>
@@ -316,7 +323,7 @@ export default function LobbyPage() {
                       fullWidth
                       startIcon={<PlayIcon />}
                       onClick={handleStart}
-                      sx={{ py: 2, fontSize: '1rem' }}
+                      sx={{ py: { xs: 1.5, sm: 2 }, fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}
                     >
                       开始游戏
                     </EnhancedButton>
@@ -326,7 +333,7 @@ export default function LobbyPage() {
                         fullWidth
                         startIcon={<AdminIcon />}
                         onClick={() => navigate(`/admin/${gameId}`)}
-                        sx={{ py: 2, fontSize: '1rem' }}
+                        sx={{ py: { xs: 1.5, sm: 2 }, fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}
                       >
                         管理员面板
                       </EnhancedButton>
@@ -342,7 +349,7 @@ export default function LobbyPage() {
                 fullWidth
                 startIcon={<PlayIcon />}
                 onClick={() => navigate(`/play/${gameId}`)}
-                sx={{ py: 2.5, fontSize: '1.2rem' }}
+                sx={{ py: { xs: 2, sm: 2.5 }, fontSize: { xs: '1.1rem', sm: '1.2rem' }, fontWeight: 700 }}
               >
                 进入游戏
               </EnhancedButton>
