@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Container,
@@ -27,8 +28,10 @@ import {
 import { auth, games } from '../api/client';
 import { useGameStore } from '../store/gameStore';
 import { gradients } from '../theme';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function JoinPage() {
+  const { t } = useTranslation();
   const [nickname, setNickname] = useState('');
   const [gameId, setGameId] = useState('');
   const [createMode, setCreateMode] = useState(false);
@@ -133,8 +136,13 @@ export default function JoinPage() {
                 overflow: 'visible',
                 backdropFilter: 'blur(20px)',
                 background: 'rgba(255, 255, 255, 0.95)',
+                position: 'relative',
               }}
             >
+              {/* 语言切换器 */}
+              <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
+                <LanguageSwitcher />
+              </Box>
               <CardContent sx={{ p: 5 }}>
                 {/* 标题 */}
                 <Stack spacing={2} alignItems="center" mb={4}>
@@ -166,7 +174,7 @@ export default function JoinPage() {
                       animation: 'fadeIn 0.8s ease-out',
                     }}
                   >
-                    INF 猎捕行动
+                    {t('app.name')}
                   </Typography>
                   <Typography
                     variant="body1"
@@ -174,7 +182,7 @@ export default function JoinPage() {
                     textAlign="center"
                     sx={{ animation: 'fadeIn 1s ease-out' }}
                   >
-                    实时位置捉人游戏 • 猎人 vs 逃亡者
+                    {t('app.subtitle')}
                   </Typography>
                 </Stack>
 
@@ -182,10 +190,10 @@ export default function JoinPage() {
                 <Stack spacing={3}>
                   {/* 昵称输入 */}
                   <TextField
-                    label="昵称"
+                    label={t('join.nickname')}
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
-                    placeholder="输入你的昵称"
+                    placeholder={t('join.nicknamePlaceholder')}
                     fullWidth
                     inputProps={{ maxLength: 20 }}
                     disabled={loading}
@@ -218,10 +226,10 @@ export default function JoinPage() {
                       label={
                         <Box>
                           <Typography variant="body1" fontWeight="600">
-                            管理员模式
+                            {t('join.adminMode')}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            可创建道具和审核捕捉
+                            {t('join.adminModeDesc')}
                           </Typography>
                         </Box>
                       }
@@ -249,13 +257,13 @@ export default function JoinPage() {
                     <Tab
                       icon={<PersonAddIcon />}
                       iconPosition="start"
-                      label="加入游戏"
+                      label={t('join.tabJoin')}
                       disabled={loading}
                     />
                     <Tab
                       icon={<AddIcon />}
                       iconPosition="start"
-                      label="创建游戏"
+                      label={t('join.tabCreate')}
                       disabled={loading}
                     />
                   </Tabs>
@@ -263,20 +271,20 @@ export default function JoinPage() {
                   {/* 加入/创建输入框 */}
                   {!createMode ? (
                     <TextField
-                      label="游戏 ID"
+                      label={t('join.gameId')}
                       value={gameId}
                       onChange={(e) => setGameId(e.target.value.toUpperCase())}
-                      placeholder="例如: ABC123"
+                      placeholder={t('join.gameIdPlaceholder')}
                       fullWidth
                       disabled={loading}
-                      helperText="输入6位游戏代码"
+                      helperText={t('join.gameIdHelper')}
                     />
                   ) : (
                     <TextField
-                      label="游戏名称"
+                      label={t('join.gameName')}
                       value={gameName}
                       onChange={(e) => setGameName(e.target.value)}
-                      placeholder="输入游戏名称"
+                      placeholder={t('join.gameNamePlaceholder')}
                       fullWidth
                       inputProps={{ maxLength: 50 }}
                       disabled={loading}
@@ -314,7 +322,7 @@ export default function JoinPage() {
                       },
                     }}
                   >
-                    {loading ? '处理中...' : createMode ? '创建并加入' : '加入游戏'}
+                    {loading ? t('join.processing') : createMode ? t('join.btnCreate') : t('join.btnJoin')}
                   </Button>
                 </Stack>
               </CardContent>
@@ -333,7 +341,7 @@ export default function JoinPage() {
               animation: 'fadeIn 1.2s ease-out',
             }}
           >
-            Powered by Material Design 3 • Enhanced Edition
+            {t('app.poweredBy')}
           </Typography>
         </Container>
       </Box>
