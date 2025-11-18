@@ -37,6 +37,8 @@ import {
 } from '../styles/shared';
 import AnimatedCard from '../components/AnimatedCard';
 import EnhancedButton from '../components/EnhancedButton';
+import LiquidBackground from '../components/LiquidBackground';
+import LiquidGlassCard from '../components/LiquidGlassCard';
 import type { Game } from '../types';
 
 export default function LobbyPage() {
@@ -121,11 +123,13 @@ export default function LobbyPage() {
   const isHunter = myParticipation?.team === 'HUNTER';
 
   return (
-    <Fade in timeout={600}>
+    <LiquidBackground variant="primary">
       <Box
         sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
           minHeight: '100vh',
-          background: `linear-gradient(to bottom, rgba(103, 80, 164, 0.03) 0%, transparent 100%)`,
           py: 3
         }}
       >
@@ -210,22 +214,15 @@ export default function LobbyPage() {
 
           {/* 阵营信息 */}
           {myParticipation && (
-            <Grow in timeout={1000}>
-              <Card
-                elevation={8}
+            <LiquidGlassCard variant="morphing" timeout={1000}>
+              <CardContent
                 sx={{
+                  p: 4,
                   background: isHunter ? gradients.hunter : gradients.runner,
+                  borderRadius: '24px',
                   color: 'white',
-                  borderRadius: 4,
                   position: 'relative',
                   overflow: 'hidden',
-                  transition: 'all 0.3s',
-                  '&:hover': {
-                    transform: 'translateY(-4px) scale(1.02)',
-                    boxShadow: isHunter
-                      ? '0 16px 48px rgba(211, 47, 47, 0.4)'
-                      : '0 16px 48px rgba(25, 118, 210, 0.4)',
-                  },
                   '&::before': {
                     content: '""',
                     position: 'absolute',
@@ -234,12 +231,12 @@ export default function LobbyPage() {
                     width: 200,
                     height: 200,
                     borderRadius: '50%',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    animation: 'pulse 3s ease-in-out infinite',
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    animation: 'liquidFloat 6s ease-in-out infinite',
                   },
                 }}
               >
-                <CardContent sx={{ p: 4, position: 'relative', zIndex: 1 }}>
+                <Box sx={{ position: 'relative', zIndex: 1 }}>
                   <Typography variant="h4" fontWeight="bold" gutterBottom>
                     {isHunter ? '🎯 你是猎人' : '🏃 你是逃亡者'}
                   </Typography>
@@ -248,9 +245,9 @@ export default function LobbyPage() {
                       ? '目标：抓捕所有逃亡者'
                       : '目标：躲避猎人，坚持到最后'}
                   </Typography>
-                </CardContent>
-              </Card>
-            </Grow>
+                </Box>
+              </CardContent>
+            </LiquidGlassCard>
           )}
 
           {/* 玩家列表 */}
@@ -354,6 +351,6 @@ export default function LobbyPage() {
         </Stack>
       </Container>
     </Box>
-    </Fade>
+    </LiquidBackground>
   );
 }
