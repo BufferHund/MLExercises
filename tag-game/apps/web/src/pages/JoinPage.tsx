@@ -25,6 +25,7 @@ import {
 import { auth, games } from '../api/client';
 import { useGameStore } from '../store/gameStore';
 import { liquidGlassInput, liquidGlassButton } from '../styles/liquidGlass';
+import { gradients } from '../theme';
 import LiquidBackground from '../components/LiquidBackground';
 import LiquidGlassCard from '../components/LiquidGlassCard';
 import LanguageSwitcher from '../components/LanguageSwitcher';
@@ -101,29 +102,40 @@ export default function JoinPage() {
           p: 2,
         }}
       >
-        <Container maxWidth="sm">
+        <Container maxWidth="sm" sx={{ width: '100%', maxWidth: { xs: '100%', sm: 500 } }}>
           <LiquidGlassCard variant="floating" timeout={1000}>
             {/* 语言切换器 */}
             <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
               <LanguageSwitcher />
             </Box>
-            <CardContent sx={{ p: 5 }}>
+            <CardContent sx={{ p: { xs: 3, sm: 4, md: 5 } }}>
                 {/* 标题 */}
-                <Stack spacing={2} alignItems="center" mb={4}>
+                <Stack spacing={{ xs: 1.5, sm: 2 }} alignItems="center" mb={{ xs: 3, sm: 4 }}>
                   <Box
                     sx={{
-                      width: 96,
-                      height: 96,
+                      width: { xs: 80, sm: 96 },
+                      height: { xs: 80, sm: 96 },
                       borderRadius: '50%',
                       background: gradients.primary,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       boxShadow: '0 10px 40px rgba(103, 80, 164, 0.4)',
-                      animation: 'scaleIn 0.6s ease-out',
+                      animation: 'liquidFloat 8s ease-in-out infinite',
+                      position: 'relative',
+                      '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '50%',
+                        background: 'inherit',
+                        opacity: 0.5,
+                        animation: 'liquidGlow 3s ease-in-out infinite',
+                      },
                     }}
                   >
-                    <GameIcon sx={{ fontSize: 56, color: 'white' }} />
+                    <GameIcon sx={{ fontSize: { xs: 48, sm: 56 }, color: 'white', zIndex: 1 }} />
                   </Box>
                   <Typography
                     variant="h3"
@@ -131,11 +143,13 @@ export default function JoinPage() {
                     fontWeight="bold"
                     textAlign="center"
                     sx={{
+                      fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
                       background: gradients.primary,
                       backgroundClip: 'text',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       animation: 'fadeIn 0.8s ease-out',
+                      lineHeight: 1.2,
                     }}
                   >
                     {t('app.name')}
@@ -144,14 +158,18 @@ export default function JoinPage() {
                     variant="body1"
                     color="text.secondary"
                     textAlign="center"
-                    sx={{ animation: 'fadeIn 1s ease-out' }}
+                    sx={{
+                      animation: 'fadeIn 1s ease-out',
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                      px: { xs: 1, sm: 0 },
+                    }}
                   >
                     {t('app.subtitle')}
                   </Typography>
                 </Stack>
 
                 {/* 表单 */}
-                <Stack spacing={3}>
+                <Stack spacing={{ xs: 2.5, sm: 3 }}>
                   {/* 昵称输入 */}
                   <TextField
                     label={t('join.nickname')}
@@ -282,8 +300,10 @@ export default function JoinPage() {
                     startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
                     sx={{
                       ...liquidGlassButton.solid,
-                      py: 2,
-                      fontSize: '1.1rem',
+                      py: { xs: 1.75, sm: 2 },
+                      fontSize: { xs: '1rem', sm: '1.1rem' },
+                      fontWeight: 700,
+                      mt: { xs: 1, sm: 0 },
                     }}
                   >
                     {loading ? t('join.processing') : createMode ? t('join.btnCreate') : t('join.btnJoin')}
@@ -298,14 +318,15 @@ export default function JoinPage() {
             color="white"
             textAlign="center"
             display="block"
-            mt={3}
+            mt={{ xs: 2, sm: 3 }}
             sx={{
               textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
               backdropFilter: 'blur(10px)',
               background: 'rgba(255, 255, 255, 0.1)',
-              padding: '8px 16px',
+              padding: { xs: '6px 12px', sm: '8px 16px' },
               borderRadius: '20px',
               border: '1px solid rgba(255, 255, 255, 0.2)',
+              fontSize: { xs: '0.7rem', sm: '0.75rem' },
             }}
           >
             {t('app.poweredBy')}
