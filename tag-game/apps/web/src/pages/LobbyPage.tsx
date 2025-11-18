@@ -3,9 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
-  Card,
   CardContent,
-  Button,
   Typography,
   Stack,
   Chip,
@@ -19,8 +17,6 @@ import {
   Divider,
   Paper,
   Fade,
-  Slide,
-  Grow,
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
@@ -32,6 +28,15 @@ import {
 import { games, users } from '../api/client';
 import { useGameStore } from '../store/gameStore';
 import { hunterColor, runnerColor, gradients } from '../theme';
+import {
+  ANIMATION_DURATION,
+  chipStyles,
+  listItemStyles,
+  avatarStyles,
+  getStaggeredDelay,
+} from '../styles/shared';
+import AnimatedCard from '../components/AnimatedCard';
+import EnhancedButton from '../components/EnhancedButton';
 import type { Game } from '../types';
 
 export default function LobbyPage() {
@@ -127,72 +132,44 @@ export default function LobbyPage() {
         <Container maxWidth="md">
           <Stack spacing={3}>
           {/* 游戏信息卡片 */}
-          <Grow in timeout={600}>
-            <Card
-              elevation={4}
-              sx={{
-                borderRadius: 4,
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 100%)',
-                transition: 'all 0.3s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12)',
-                },
-              }}
-            >
-              <CardContent sx={{ p: 4 }}>
-                <Stack spacing={3}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography variant="h4" fontWeight="bold">
-                      {game?.name}
-                    </Typography>
-                    <Chip
-                      label={game?.status === 'LOBBY' ? '等待中' : '进行中'}
-                      color={game?.status === 'LOBBY' ? 'default' : 'success'}
-                      sx={{
-                        fontWeight: 600,
-                        px: 1,
-                      }}
-                    />
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom fontWeight={500}>
-                      游戏代码
-                    </Typography>
-                    <Typography
-                      variant="h5"
-                      fontFamily="monospace"
-                      fontWeight="bold"
-                      sx={{
-                        background: gradients.primary,
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                      }}
-                    >
-                      {gameId}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grow>
+          <AnimatedCard animation="grow" timeout={ANIMATION_DURATION.normal}>
+            <CardContent sx={{ p: 4 }}>
+              <Stack spacing={3}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Typography variant="h4" fontWeight="bold">
+                    {game?.name}
+                  </Typography>
+                  <Chip
+                    label={game?.status === 'LOBBY' ? '等待中' : '进行中'}
+                    color={game?.status === 'LOBBY' ? 'default' : 'success'}
+                    sx={chipStyles.elevated}
+                  />
+                </Box>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom fontWeight={500}>
+                    游戏代码
+                  </Typography>
+                  <Typography
+                    variant="h5"
+                    fontFamily="monospace"
+                    fontWeight="bold"
+                    sx={{
+                      background: gradients.primary,
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}
+                  >
+                    {gameId}
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </AnimatedCard>
 
           {/* 玩家徽章二维码 */}
           {badge && (
-            <Grow in timeout={800}>
-              <Card
-                elevation={4}
-                sx={{
-                  borderRadius: 4,
-                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(247, 247, 255, 1) 100%)',
-                  transition: 'all 0.3s',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 12px 40px rgba(103, 80, 164, 0.15)',
-                  },
-                }}
-              >
+            <AnimatedCard variant="gradient" animation="grow" timeout={ANIMATION_DURATION.slow}>
                 <CardContent sx={{ p: 4 }}>
                   <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
                     <QrCodeIcon sx={{ mr: 1, color: 'primary.main' }} />
@@ -228,8 +205,7 @@ export default function LobbyPage() {
                     />
                   </Stack>
                 </CardContent>
-              </Card>
-            </Grow>
+            </AnimatedCard>
           )}
 
           {/* 阵营信息 */}
@@ -278,14 +254,7 @@ export default function LobbyPage() {
           )}
 
           {/* 玩家列表 */}
-          <Grow in timeout={1200}>
-            <Card
-              elevation={4}
-              sx={{
-                borderRadius: 4,
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 100%)',
-              }}
-            >
+          <AnimatedCard animation="grow" timeout={ANIMATION_DURATION.slowest}>
               <CardContent sx={{ p: 4 }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                   玩家列表 ({game?.participations?.length || 0})
@@ -293,30 +262,10 @@ export default function LobbyPage() {
                 <Divider sx={{ my: 3 }} />
                 <List sx={{ p: 0 }}>
                   {game?.participations?.map((p, index) => (
-                    <Fade in timeout={1400 + index * 100} key={p.id}>
-                      <ListItem
-                        sx={{
-                          borderRadius: 3,
-                          mb: 1.5,
-                          bgcolor: 'rgba(0, 0, 0, 0.02)',
-                          transition: 'all 0.2s',
-                          '&:hover': {
-                            bgcolor: 'rgba(103, 80, 164, 0.08)',
-                            transform: 'translateX(8px)',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-                          },
-                          p: 2,
-                        }}
-                      >
+                    <Fade in timeout={getStaggeredDelay(index, 1400, 100)} key={p.id}>
+                      <ListItem sx={listItemStyles.elevated}>
                         <ListItemAvatar>
-                          <Avatar
-                            sx={{
-                              bgcolor: p.team === 'HUNTER' ? hunterColor : runnerColor,
-                              width: 48,
-                              height: 48,
-                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                            }}
-                          >
+                          <Avatar sx={p.team === 'HUNTER' ? avatarStyles.hunter : avatarStyles.runner}>
                             <PersonIcon />
                           </Avatar>
                         </ListItemAvatar>
@@ -347,119 +296,60 @@ export default function LobbyPage() {
                   ))}
                 </List>
               </CardContent>
-            </Card>
-          </Grow>
+          </AnimatedCard>
 
           {/* 主持人操作 */}
           {game?.status === 'LOBBY' && (
-            <Grow in timeout={1400}>
-              <Card
-                elevation={4}
-                sx={{
-                  borderRadius: 4,
-                  background: 'linear-gradient(135deg, rgba(103, 80, 164, 0.05) 0%, rgba(255, 255, 255, 1) 100%)',
-                }}
-              >
+            <AnimatedCard animation="grow" timeout={1400}>
                 <CardContent sx={{ p: 4 }}>
                   <Typography variant="h6" fontWeight="bold" gutterBottom>
                     主持人操作
                   </Typography>
                   <Stack spacing={2} mt={3}>
-                    <Button
-                      variant="contained"
-                      size="large"
+                    <EnhancedButton
                       fullWidth
                       startIcon={<ShuffleIcon />}
                       onClick={handleAssignTeams}
-                      sx={{
-                        py: 2,
-                        fontSize: '1rem',
-                        fontWeight: 'bold',
-                        borderRadius: 3,
-                        background: gradients.primary,
-                        boxShadow: '0 6px 20px rgba(103, 80, 164, 0.3)',
-                        '&:hover': {
-                          background: gradients.primary,
-                          boxShadow: '0 8px 28px rgba(103, 80, 164, 0.4)',
-                        },
-                      }}
+                      sx={{ py: 2, fontSize: '1rem' }}
                     >
                       分配阵营
-                    </Button>
-                    <Button
-                      variant="contained"
-                      size="large"
+                    </EnhancedButton>
+                    <EnhancedButton
+                      variant="success"
                       fullWidth
-                      color="success"
                       startIcon={<PlayIcon />}
                       onClick={handleStart}
-                      sx={{
-                        py: 2,
-                        fontSize: '1rem',
-                        fontWeight: 'bold',
-                        borderRadius: 3,
-                        boxShadow: '0 6px 20px rgba(46, 125, 50, 0.3)',
-                        '&:hover': {
-                          boxShadow: '0 8px 28px rgba(46, 125, 50, 0.4)',
-                        },
-                      }}
+                      sx={{ py: 2, fontSize: '1rem' }}
                     >
                       开始游戏
-                    </Button>
+                    </EnhancedButton>
                     {user?.isAdmin && (
-                      <Button
-                        variant="contained"
-                        size="large"
+                      <EnhancedButton
+                        variant="error"
                         fullWidth
-                        color="warning"
                         startIcon={<AdminIcon />}
                         onClick={() => navigate(`/admin/${gameId}`)}
-                        sx={{
-                          py: 2,
-                          fontSize: '1rem',
-                          fontWeight: 'bold',
-                          borderRadius: 3,
-                          boxShadow: '0 6px 20px rgba(237, 108, 2, 0.3)',
-                          '&:hover': {
-                            boxShadow: '0 8px 28px rgba(237, 108, 2, 0.4)',
-                          },
-                        }}
+                        sx={{ py: 2, fontSize: '1rem' }}
                       >
                         管理员面板
-                      </Button>
+                      </EnhancedButton>
                     )}
                   </Stack>
                 </CardContent>
-              </Card>
-            </Grow>
+            </AnimatedCard>
           )}
 
           {game?.status === 'RUNNING' && (
-            <Grow in timeout={1400}>
-              <Button
-                variant="contained"
-                size="large"
+            <AnimatedCard animation="grow" timeout={1400}>
+              <EnhancedButton
                 fullWidth
-                color="primary"
                 startIcon={<PlayIcon />}
                 onClick={() => navigate(`/play/${gameId}`)}
-                sx={{
-                  py: 2.5,
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold',
-                  borderRadius: 4,
-                  background: gradients.primary,
-                  boxShadow: '0 8px 28px rgba(103, 80, 164, 0.4)',
-                  '&:hover': {
-                    background: gradients.primary,
-                    boxShadow: '0 12px 36px rgba(103, 80, 164, 0.5)',
-                    transform: 'translateY(-2px)',
-                  },
-                }}
+                sx={{ py: 2.5, fontSize: '1.2rem' }}
               >
                 进入游戏
-              </Button>
-            </Grow>
+              </EnhancedButton>
+            </AnimatedCard>
           )}
         </Stack>
       </Container>

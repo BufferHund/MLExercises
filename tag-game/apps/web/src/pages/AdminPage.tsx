@@ -3,24 +3,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
-  Card,
   CardContent,
-  Button,
   Typography,
   Stack,
   Tabs,
   Tab,
-  IconButton,
   Snackbar,
   Alert,
   Chip,
-  AppBar,
-  Toolbar,
   Badge,
   Fade,
-  Zoom,
-  Grow,
-  Slide,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -33,7 +25,17 @@ import {
 import { admin, games } from '../api/client';
 import { useGameStore } from '../store/gameStore';
 import CreateItemDialog from '../components/CreateItemDialog';
-import { gradients } from '../theme';
+import {
+  ANIMATION_DURATION,
+  buttonStyles,
+  chipStyles,
+  getStaggeredDelay,
+  backgroundGradients,
+} from '../styles/shared';
+import AnimatedCard from '../components/AnimatedCard';
+import EnhancedButton from '../components/EnhancedButton';
+import EnhancedAppBar from '../components/EnhancedAppBar';
+import EmptyState from '../components/EmptyState';
 import type { Game, Item, Capture } from '../types';
 
 export default function AdminPage() {
@@ -138,52 +140,21 @@ export default function AdminPage() {
   if (!user?.isAdmin) return null;
 
   return (
-    <Fade in timeout={600}>
-      <Box
-        sx={{
-          minHeight: '100vh',
-          background: 'linear-gradient(to bottom, rgba(237, 108, 2, 0.03) 0%, transparent 100%)',
-        }}
-      >
+    <Fade in timeout={ANIMATION_DURATION.normal}>
+      <Box sx={{ minHeight: '100vh', background: backgroundGradients.warning }}>
         {/* 顶部导航栏 */}
-        <Slide in direction="down" timeout={600}>
-          <AppBar
-            position="static"
-            elevation={4}
-            sx={{
-              background: 'linear-gradient(135deg, #ED6C02 0%, #F57C00 100%)',
-              boxShadow: '0 4px 20px rgba(237, 108, 2, 0.3)',
-            }}
-          >
-            <Toolbar>
-              <IconButton
-                edge="start"
-                color="inherit"
-                onClick={() => navigate(-1)}
-                sx={{
-                  bgcolor: 'rgba(255, 255, 255, 0.15)',
-                  '&:hover': {
-                    bgcolor: 'rgba(255, 255, 255, 0.25)',
-                  },
-                }}
-              >
-                <BackIcon />
-              </IconButton>
-              <Typography variant="h5" sx={{ flexGrow: 1, ml: 2, fontWeight: 'bold' }}>
-                管理员面板
-              </Typography>
-              <Chip
-                label={`${game?.name} (${gameId})`}
-                sx={{
-                  bgcolor: 'rgba(255, 255, 255, 0.25)',
-                  backdropFilter: 'blur(10px)',
-                  color: 'white',
-                  fontWeight: 600,
-                }}
-              />
-            </Toolbar>
-          </AppBar>
-        </Slide>
+        <EnhancedAppBar
+          variant="admin"
+          title="管理员面板"
+          leftIcon={<BackIcon />}
+          onLeftClick={() => navigate(-1)}
+          rightContent={
+            <Chip
+              label={`${game?.name} (${gameId})`}
+              sx={chipStyles.glassmorphism}
+            />
+          }
+        />
 
         {/* 标签页 */}
         <Box
@@ -228,78 +199,44 @@ export default function AdminPage() {
         {activeTab === 0 && (
           <Stack spacing={3}>
             {/* 操作按钮 */}
-            <Fade in timeout={800}>
+            <Fade in timeout={ANIMATION_DURATION.slow}>
               <Stack direction="row" spacing={2} flexWrap="wrap">
-                <Button
-                  variant="contained"
-                  size="large"
+                <EnhancedButton
                   startIcon={<AddIcon />}
                   onClick={() => setCreateDialogOpen(true)}
-                  sx={{
-                    borderRadius: 3,
-                    px: 3,
-                    fontWeight: 'bold',
-                    background: gradients.primary,
-                    boxShadow: '0 4px 14px rgba(103, 80, 164, 0.3)',
-                    '&:hover': {
-                      background: gradients.primary,
-                      boxShadow: '0 6px 20px rgba(103, 80, 164, 0.4)',
-                    },
-                  }}
+                  sx={{ px: 3 }}
                 >
                   创建道具
-                </Button>
-                <Button
+                </EnhancedButton>
+                <EnhancedButton
                   variant="outlined"
-                  size="large"
                   startIcon={<PrintIcon />}
                   onClick={handlePrintQR}
                   disabled={items.length === 0}
-                  sx={{
-                    borderRadius: 3,
-                    px: 3,
-                    fontWeight: 600,
-                  }}
+                  sx={{ px: 3 }}
                 >
                   打印二维码
-                </Button>
-                <Button
+                </EnhancedButton>
+                <EnhancedButton
                   variant="outlined"
-                  size="large"
                   startIcon={<RefreshIcon />}
                   onClick={loadData}
-                  sx={{
-                    borderRadius: 3,
-                    px: 3,
-                    fontWeight: 600,
-                  }}
+                  sx={{ px: 3 }}
                 >
                   刷新
-                </Button>
+                </EnhancedButton>
               </Stack>
             </Fade>
 
             {/* 道具网格 */}
             {items.length === 0 ? (
-              <Grow in timeout={1000}>
-                <Card
-                  elevation={2}
-                  sx={{
-                    borderRadius: 4,
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 100%)',
-                  }}
-                >
-                  <CardContent sx={{ textAlign: 'center', py: 10 }}>
-                    <AddIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2, opacity: 0.5 }} />
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
-                      还没有道具
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      点击"创建道具"按钮来添加游戏道具
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grow>
+              <AnimatedCard animation="grow" timeout={ANIMATION_DURATION.slower}>
+                <EmptyState
+                  icon={<AddIcon />}
+                  title="还没有道具"
+                  description="点击"创建道具"按钮来添加游戏道具"
+                />
+              </AnimatedCard>
             ) : (
               <Box
                 sx={{
@@ -313,19 +250,17 @@ export default function AdminPage() {
                 }}
               >
                 {items.map((item, idx) => (
-                  <Zoom in timeout={1000 + idx * 100} key={item.id}>
-                    <Card
-                      elevation={4}
-                      sx={{
-                        borderRadius: 4,
-                        background: 'linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(247, 247, 255, 1) 100%)',
-                        transition: 'all 0.3s',
-                        '&:hover': {
-                          transform: 'translateY(-8px) scale(1.02)',
-                          boxShadow: '0 12px 36px rgba(0, 0, 0, 0.15)',
-                        },
-                      }}
-                    >
+                  <AnimatedCard
+                    key={item.id}
+                    variant="gradient"
+                    animation="zoom"
+                    timeout={getStaggeredDelay(idx)}
+                    sx={{
+                      '&:hover': {
+                        transform: 'translateY(-8px) scale(1.02)',
+                      },
+                    }}
+                  >
                       <CardContent sx={{ p: 3 }}>
                         <Box sx={{ textAlign: 'center' }}>
                           <Box
@@ -362,8 +297,7 @@ export default function AdminPage() {
                           </Stack>
                         </Box>
                       </CardContent>
-                    </Card>
-                  </Zoom>
+                  </AnimatedCard>
                 ))}
               </Box>
             )}
@@ -372,58 +306,33 @@ export default function AdminPage() {
 
         {activeTab === 1 && (
           <Stack spacing={3}>
-            <Fade in timeout={800}>
-              <Button
+            <Fade in timeout={ANIMATION_DURATION.slow}>
+              <EnhancedButton
                 variant="outlined"
-                size="large"
                 startIcon={<RefreshIcon />}
                 onClick={loadData}
-                sx={{
-                  alignSelf: 'flex-start',
-                  borderRadius: 3,
-                  px: 3,
-                  fontWeight: 600,
-                }}
+                sx={{ alignSelf: 'flex-start', px: 3 }}
               >
                 刷新
-              </Button>
+              </EnhancedButton>
             </Fade>
 
             {pendingCaptures.length === 0 ? (
-              <Grow in timeout={1000}>
-                <Card
-                  elevation={2}
-                  sx={{
-                    borderRadius: 4,
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 100%)',
-                  }}
-                >
-                  <CardContent sx={{ textAlign: 'center', py: 10 }}>
-                    <CheckIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2, opacity: 0.5 }} />
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
-                      没有待审核的捕捉
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      所有捕捉记录都已处理完成
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grow>
+              <AnimatedCard animation="grow" timeout={ANIMATION_DURATION.slower}>
+                <EmptyState
+                  icon={<CheckIcon />}
+                  title="没有待审核的捕捉"
+                  description="所有捕捉记录都已处理完成"
+                />
+              </AnimatedCard>
             ) : (
               pendingCaptures.map((capture, idx) => (
-                <Zoom in timeout={1000 + idx * 150} key={capture.id}>
-                  <Card
-                    elevation={4}
-                    sx={{
-                      borderRadius: 4,
-                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(247, 247, 255, 1) 100%)',
-                      transition: 'all 0.3s',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 12px 36px rgba(0, 0, 0, 0.15)',
-                      },
-                    }}
-                  >
+                <AnimatedCard
+                  key={capture.id}
+                  variant="gradient"
+                  animation="zoom"
+                  timeout={getStaggeredDelay(idx, 1000, 150)}
+                >
                     <CardContent sx={{ p: 3 }}>
                       <Box
                         sx={{
@@ -481,53 +390,30 @@ export default function AdminPage() {
                               </Stack>
                             </Box>
                             <Stack direction="row" spacing={2}>
-                              <Button
-                                variant="contained"
-                                color="success"
-                                size="large"
+                              <EnhancedButton
+                                variant="success"
                                 startIcon={<CheckIcon />}
                                 onClick={() => handleVerifyCapture(capture.id, true)}
                                 disabled={loading}
-                                sx={{
-                                  borderRadius: 2,
-                                  px: 4,
-                                  fontWeight: 'bold',
-                                  flex: 1,
-                                  boxShadow: '0 4px 12px rgba(46, 125, 50, 0.3)',
-                                  '&:hover': {
-                                    boxShadow: '0 6px 16px rgba(46, 125, 50, 0.4)',
-                                  },
-                                }}
+                                sx={{ px: 4, flex: 1 }}
                               >
                                 通过
-                              </Button>
-                              <Button
-                                variant="contained"
-                                color="error"
-                                size="large"
+                              </EnhancedButton>
+                              <EnhancedButton
+                                variant="error"
                                 startIcon={<CloseIcon />}
                                 onClick={() => handleVerifyCapture(capture.id, false)}
                                 disabled={loading}
-                                sx={{
-                                  borderRadius: 2,
-                                  px: 4,
-                                  fontWeight: 'bold',
-                                  flex: 1,
-                                  boxShadow: '0 4px 12px rgba(211, 47, 47, 0.3)',
-                                  '&:hover': {
-                                    boxShadow: '0 6px 16px rgba(211, 47, 47, 0.4)',
-                                  },
-                                }}
+                                sx={{ px: 4, flex: 1 }}
                               >
                                 拒绝
-                              </Button>
+                              </EnhancedButton>
                             </Stack>
                           </Stack>
                         </Box>
                       </Box>
                     </CardContent>
-                  </Card>
-                </Zoom>
+                </AnimatedCard>
               ))
             )}
           </Stack>
